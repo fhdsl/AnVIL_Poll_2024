@@ -1,0 +1,32 @@
+---
+title: "**About the AnVIL Community Poll**"
+output:
+  html_document
+---
+
+<br>
+
+### **Results Summary**
+
+- The majority of current users leverage AnVIL for ongoing projects. Potential users were evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
+- Most of the respondents have a PhD or are currently working on a PhD.
+- Many respondents do computational work.
+- Almost all respondents are affiliated with a research intensive institution.
+- PRIMED, GREGoR, and eMERGE were the most popular consortia affiliations. CCDG and GTEx are also represented.
+- *For current users*, the most common computational need was needing large amounts of storage.
+- Many users reported they were "extremely likely" to recommend AnVIL, but we'd like to follow up with users who chose differently.
+
+Click on each tab to learn more.
+
+<br>
+
+### **Design**
+
+This user poll was conducted in Spring 2024, with the poll open for responses from February 15th to March 25th. 52 total responses were received, two of which were determined to be duplicate users, leaving a total of **50 user responses** used in the analysis. The following graphic shows the arrangement of questions. The first question was used to separate users into "Current" and "Potential" users. Demographics, experience, awareness, and preference related questions were asked of all users.
+
+```{r, fig.align='center', fig.alt= "Example image", echo = FALSE, out.width="100%"}
+ottrpal::include_slide("https://docs.google.com/presentation/d/1PANHDY3T9wpEX1GBYcqkdYMG0c20UeZPH2pwjHFcLik/edit#slide=id.g2dda935efac_0_0")
+```
+
+
+

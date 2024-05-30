@@ -1,0 +1,36 @@
+name: State of the AnVIL
+output_dir: '../docs'
+navbar:
+  title: "AnVIL Poll 2024"
+  left:
+  - text: ""
+    href: index.html
+    icon: fa-home
+  - text: "Identify User Type"
+    href: IdentifyTypeOfUsers.html
+  - text: "Demographics"
+    href: Demographics.html
+  - text: "Experience"
+    href: Experience.html
+  - text: "Awareness"
+    href: Awareness.html
+  - text: "Preferences"
+    href: Preferences.html
+  - text: "Current Users"
+    href: "CurrentUserQs.html"
+  - text: "Contact"
+    href: contact.html
+    icon: fa-envelope
+  - text: AnVIL Home
+    href: https://www.anvilproject.org/
+
+
+output:
+  html_document:
+    theme: cosmo
+    lib_dir: site_libs
+    self_contained: no
+    highlight: textmate
+    css: styles.css
+    includes:
+       in_header: resources/header.html

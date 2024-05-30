@@ -1,0 +1,48 @@
+---
+title: "Identify current vs potential users"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(tidyverse)
+library(here)
+
+# Inherit `resultsTidy`
+knitr::knit_child(here("TidyData.Rmd"))
+# Import functions to stylize plots
+source(here("resources/scripts/shared_functions.R"))
+```
+
+```{r, message=FALSE, echo=FALSE}
+topPlot <- resultsTidy %>% 
+  group_by(UserType, CurrentUsageDescription) %>% 
+  summarize(count = n()) %>% 
+  mutate(CurrentUsageDescription = case_when(
+    CurrentUsageDescription == "For ongoing projects (e.g., consistent project development and/or work)" ~ "For ongoing projects:\nconsistent project development\nand/or work",
+    CurrentUsageDescription == "For completed/long-term projects (e.g., occasional updates/maintenance as needed)" ~ "For completed/long-term projects:\noccasional updates/maintenance\nas needed",
+    CurrentUsageDescription == "For short-term projects (e.g., short, intense bursts separated by a few months)" ~ "For short-term projects:\nshort, intense bursts\nseparated by a few months",
+    CurrentUsageDescription == "I do not currently use the AnVIL, but have in the past" ~ "I do not current use the AnVIL,\nbut have in the past",
+    CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "I have never\nused the AnVIL",
+    CurrentUsageDescription == "I have never heard of the AnVIL" ~ "I have never\nheard of the AnVIL"
+  )) %>%
+  ggplot(aes(x = count, 
+             y = reorder(CurrentUsageDescription, count), 
+             fill = UserType)) + 
+  geom_bar(stat="identity", position ="stack") + 
+  ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
+  geom_text(aes(label = count, group = CurrentUsageDescription),
+                  hjust = -0.5, size=2)
+
+stylize_bar(topPlot)
+```
+
+## Takeaway
+
+Of the `r nrow(resultsTidy)` responses, `r nrow(resultsTidy %>% filter(UserType == "Current User"))` were current users and `r nrow(resultsTidy %>% filter(UserType == "Potential User"))` were potential users. The majority of current users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
+
+## Potential Follow-ups:
+
+- Look to see if those potential users who previously used to use the AnVIL show similarity in overall trends with the rest of the potential users
+- Directly ask why they no longer use the AnVIL

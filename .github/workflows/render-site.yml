@@ -52,14 +52,26 @@ jobs:
           # use github PAT
           token: ${{ secrets.GH_PAT }}
 
+      # Set up / install jq so that json credentials can be read in
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.1.0
+
       # We want a fresh run of the renders each time - so first delete old html files
       - name: Delete old *.html
-        run: Rscript -e "rmarkdown::clean_site(preview = FALSE)"
+        run: Rscript -e "rmarkdown::clean_site(input = 'pages', preview = FALSE)"
 
        # Now we want to render all the html files from the Rmd files
       - name: Run render html
         id: site
-        run: Rscript -e "rmarkdown::render_site()"
+        run: |
+          if [ ! -d .secrets ]; then
+            mkdir .secrets
+          fi
+          jq -n '${{ secrets.GS_SA_KEY }}' > .secrets/${{ secrets.GS_SA_FILENAME }}
+          if test -f .secrets/${{ secrets.GS_SA_FILENAME }}; then
+            echo "Key created!"
+          fi
+          Rscript --vanilla "resources/render.R"
 
       # This checks on the steps before it and makes sure that they completed.
       # If the renders didn't complete we don't want to commit the file changes
@@ -77,4 +89,5 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add --force docs/*
           git commit -m 'Render site' || echo "No changes to commit"
+          git pull --rebase --allow-unrelated-histories --strategy-option=ours
           git push origin main || echo "No changes to push"

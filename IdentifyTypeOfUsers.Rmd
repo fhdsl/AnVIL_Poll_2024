@@ -1,0 +1,52 @@
+---
+title: "Identify current vs potential users"
+author: ""
+date: ""
+output: html_document
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(tidyverse)
+library(here)
+
+knitr::knit_child("TidyData.Rmd") #inherit resultsTidy
+```
+
+```{r, message=FALSE, echo=FALSE}
+resultsTidy %>% 
+  group_by(UserType, CurrentUsageDescription) %>% 
+  summarize(count = n()) %>% 
+  mutate(CurrentUsageDescription = case_when(
+    CurrentUsageDescription == "For ongoing projects (e.g., consistent project development and/or work)" ~ "For ongoing projects:\nconsistent project development\nand/or work",
+    CurrentUsageDescription == "For completed/long-term projects (e.g., occasional updates/maintenance as needed)" ~ "For completed/long-term projects:\noccasional updates/maintenance\nas needed",
+    CurrentUsageDescription == "For short-term projects (e.g., short, intense bursts separated by a few months)" ~ "For short-term projects:\nshort, intense bursts\nseparated by a few months",
+    CurrentUsageDescription == "I do not currently use the AnVIL, but have in the past" ~ "I do not current use the AnVIL,\nbut have in the past",
+    CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "I have never\nused the AnVIL",
+    CurrentUsageDescription == "I have never heard of the AnVIL" ~ "I have never\nheard of the AnVIL"
+  )) %>%
+  ggplot(aes(x = count, y = reorder(CurrentUsageDescription, count), fill = UserType)) + 
+  scale_fill_manual(values = c("#E0DD10", "#035C94")) + 
+  geom_bar(stat="identity", position ="stack") + 
+  theme_classic() +
+  xlab("Count") +
+  ylab("") +
+  ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
+  geom_text(aes(label = count, group = CurrentUsageDescription),
+                  hjust = -0.5, size=2) +
+  theme(legend.title = element_blank())
+```
+
+## Takeaway
+
+Of the ```r nrow(resultsTidy)``` responses, ```r nrow(resultsTidy %>% filter(UserType == "Current User"))``` were current users and ```r nrow(resultsTidy %>% filter(UserType == "Potential User"))``` were potential users. The majority of current users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
+
+## Potential Follow-ups:
+
+- Look to see if those potential users who previously used to use the AnVIL show similarity in overall trends with the rest of the potential users
+- Directly ask why they no longer use the AnVIL
+
+<details><summary>Description of variable definitions and steps in preparing and plotting the data</summary>
+
+First, we group the data by the assigned `UserType` labels/categories and their related more detailed descriptions. Then we use `summarize` to count the occurrences for each of those categories. We use a mutate statement to better fit the detailed descriptions on the plot. We then send this data to ggplot with the count on the x-axis, and the usage descriptions on the y-axis (ordered by count so highest count is on the top). We fill with the user type description we've assigned. We manually scale the fill to be AnVIL colors and specify we want this to be a stacked bar chart. We then make edits for the theme and labels and finally add a geom_text label for the count next to the bars before we save the plot.
+
+</details>

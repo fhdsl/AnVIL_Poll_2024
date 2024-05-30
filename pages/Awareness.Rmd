@@ -1,0 +1,123 @@
+---
+title: "Awareness"
+output: html_document
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(tidyverse)
+library(here)
+
+# Inherit `resultsTidy`
+knitr::knit_child(here("TidyData.Rmd"))
+# Import functions to stylize plots
+source(here("resources/scripts/shared_functions.R"))
+```
+
+<br/>
+
+# Monthly AnVIL Demos
+
+## Raw responses
+
+```{r echo=FALSE, message=FALSE}
+demoPlotRaw <- resultsTidy %>%
+  group_by(UserType, AnVILDemo) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=reorder(AnVILDemo, count),
+             x = count,
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
+stylize_bar(demoPlotRaw)
+```  
+  
+## Awareness
+
+```{r, message=FALSE, echo = FALSE}
+demoPlot <- resultsTidy %>% 
+  group_by(UserType, AnVILDemoAwareness) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y = AnVILDemoAwareness, 
+             x = count, 
+             fill = UserType)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
+stylize_bar(demoPlot) +
+  ylab("Awareness")
+  
+```
+
+## Takeaway
+
+Most respondents have not attended an AnVIL Demo. To investigate whether this was an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users. 
+
+<br/>
+
+# AnVIL Support Forum
+
+```{r, message=FALSE, echo=FALSE}
+forumdf <- resultsTidy %>% 
+  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, 
+                                         pattern = "No, ", 
+                                         replacement= "No ")) %>% 
+  separate(AnVILSupportForum, 
+           c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
+           sep = ", ", 
+           fill = "right") %>% 
+  pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
+  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>% 
+  summarize(count = n()) %>% 
+  drop_na() %>% 
+  mutate(forumInteractionDescription = 
+           factor(forumInteractionDescription, levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
+        forumAwareness = factor(
+          case_when(
+          forumInteractionDescription == "Posted in" ~ "Aware of",
+          forumInteractionDescription == "Answered someone's post" ~ "Aware of",
+          forumInteractionDescription == "Read through others' posts" ~ "Aware of",
+          forumInteractionDescription == "No but aware of" ~ "Aware of",
+          forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
+        ), levels = c("Not Aware of", "Aware of")),
+        forumUse = factor(
+          case_when(
+          forumInteractionDescription == "Posted in" ~ "Have utilized",
+          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
+          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
+          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
+          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
+        ), levels = c("Have not utilized", "Have utilized"))
+)
+```
+
+## Raw Responses
+
+```{r, message=FALSE, echo=FALSE}
+forumPlotRaw <- ggplot(forumdf, 
+                       aes(y = reorder(forumInteractionDescription, count), 
+                           x = count, 
+                           fill = UserType)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+
+stylize_bar(forumPlotRaw)
+```
+
+## Awareness
+
+```{r, message=FALSE, echo=FALSE}
+forumPlot <- ggplot(forumdf, 
+                    aes(y = forumAwareness, 
+                        x = count, 
+                        fill = UserType)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+
+stylize_bar(forumPlot) +
+  ylab("Awareness")
+```
+
+## Takeaway
+
+Most respondents have not used the AnVIL support forum. We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.

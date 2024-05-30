@@ -1,0 +1,246 @@
+---
+title: "Experience"
+output: html_document
+date: ""
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(tidyverse)
+library(here)
+library(grid) #for Grobs
+
+# Inherits `resultsTidy`
+knitr::knit_child(here("TidyData.Rmd"))
+# Import functions to stylize plots
+source(here("resources/scripts/shared_functions.R"))
+```
+
+<br/>
+
+# Tool & Resource Knowledge/Comfort level
+
+```{r, message=FALSE, echo = FALSE}
+toPlotToolKnowledge <- bind_rows(
+  resultsTidy %>%
+    filter(UserType == "Current User") %>%
+    select(starts_with("Score_")) %>%
+    colSums(na.rm = TRUE) %>%
+    as.data.frame() %>% `colnames<-`(c("totalScore")) %>%
+    mutate(nscores = sum(resultsTidy$UserType == "Current User"),
+          avgScore = totalScore / nscores,
+          UserType = "Current User") %>%
+  mutate(WhereTool = rownames(.)) %>%
+  separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
+  mutate(AnVILorNo = 
+           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
+                     AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
+                     ),
+         Tool = 
+           recode(Tool, "JupyterNotebooks" = "Jupyter Notebooks",
+                  "WDL" = "Workflows",
+                  "CommandLine" = "Unix / Command Line",
+                  "AccessData" = "Access controlled access data",
+                  "Terra" = "Terra Workspaces",
+                  "BioconductorRStudio" = "Bioconductor & RStudio"
+                  )
+         ),
+  resultsTidy %>%
+    filter(UserType == "Potential User") %>%
+    select(starts_with("Score_AllTech")) %>%
+    colSums() %>%
+    as.data.frame() %>% `colnames<-`(c("totalScore")) %>%
+    mutate(nscores = sum(resultsTidy$UserType == "Potential User"),
+           avgScore = totalScore / nscores,
+           UserType = "Potential User") %>%
+    mutate(WhereTool = rownames(.)) %>%
+    separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
+    mutate(AnVILorNo = 
+           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
+                     AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
+                     ),
+           Tool = 
+           recode(Tool, "JupyterNotebooks" = "Jupyter Notebooks",
+                  "WDL" = "Workflows",
+                  "CommandLine" = "Unix / Command Line",
+                  "AccessData" = "Access controlled access data",
+                  "Terra" = "Terra Workspaces",
+                  "BioconductorRStudio" = "Bioconductor & RStudio"
+                  )
+          )
+) %>%
+  mutate(UserType = factor(UserType, levels = c("Potential User", "Current User")))
+
+roi <- toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),]
+toPlotToolKnowledge <- rows_append(toPlotToolKnowledge, data.frame(
+          UserType = rep(roi$UserType,2),
+          avgScore = rep(roi$avgScore,2),
+          AnVILorNo = rep(roi$AnVILorNo,2),
+          Tool = c("Bioconductor", "RStudio")
+  )) %>%
+  rows_delete(., data.frame(roi))
+```
+
+```{r message=FALSE, echo=FALSE}
+ggplot(toPlotToolKnowledge, 
+       aes(y = reorder(Tool, avgScore), x = avgScore)) + 
+  geom_point(aes(color = UserType, shape = AnVILorNo)) + 
+  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + 
+  ylab("Tool or Data Resource") + 
+  xlab("Average Knowledge or Comfort Score") + 
+  theme_bw() + 
+  theme(panel.background = element_blank(), 
+        panel.grid.minor.x = element_blank()) +
+annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) + 
+  annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  ggtitle("How would you rate your knowledge of or\ncomfort with these technologies or data features?") +
+  scale_color_manual(values = c("#E0DD10", "#035C94")) +
+  scale_shape_manual(values = c(4, 16)) +
+  theme(legend.title = element_blank())
+```
+
+## Takeaways
+
+Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users reported similar comfort levels.
+
+Overall, there is less comfort with containers or workflows than using various programming languages and integrated development environments (IDEs). 
+
+## Potential follow-ups
+
+- Potentially prioritize developing resources for utilizing the tools or data resources which correspond to lower comfort levels
+
+<br/>
+
+# Types of data analyzed
+
+TBA
+
+<br/>
+
+# Genomics and Clinical Research Experience
+
+```{r, message=FALSE, echo = FALSE}
+experienceDf <- resultsTidy %>% 
+  select(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
+  pivot_longer(c(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience), 
+               names_to = "researchType", 
+               values_to = "experienceLevel") %>% 
+  mutate(experienceLevel = 
+           factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
+         researchType = case_when(
+           researchType == "HumanClinicalExperience" ~ "Human Clinical Research",
+           researchType == "HumanGenomicExperience" ~ "Human Genomic Research",
+           researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research")
+         ) %>%
+  group_by(researchType, experienceLevel, UserType) %>% 
+  summarize(n = n()) 
+
+ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) + 
+  facet_grid(~researchType) + 
+  geom_bar(stat="identity") + 
+  theme_bw() + 
+  theme(panel.background = element_blank(), 
+        panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  geom_text(
+    aes(label = after_stat(y), group = experienceLevel), 
+    stat = 'summary', fun = sum, vjust = -0.5, size=2
+    ) + 
+  ylab("Count") + 
+  xlab ("Reported Experience Level") +
+  coord_cartesian(clip = "off") + 
+  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
+  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
+  theme(legend.position = "none")+
+  ggtitle("How much experience do you have analyzing\nthe following data categories?")
+```
+
+## Takeaway
+
+21 respondents reported that they were extremely experienced in analyzing human genomic data, while only 6 respondents reported that they were not at all experienced in analyzing human genomic data. However, for human clinical data and non-human genomic data, more respondents reported being not at all experienced in analyzing those data than reported being extremely experienced.
+
+## Potential Follow-ups
+
+  - What's the overlap like for those moderately or extremely experienced in these various categories?
+
+<br/>
+
+# General interest in controlled access datasets
+
+```{r message=FALSE, echo=FALSE}
+dataInterestPlot <- resultsTidy %>% 
+  group_by(InterestControlledData) %>% 
+  summarize(count = n()) %>%
+  ggplot(aes(x = InterestControlledData, 
+             y = count, 
+             fill = as.factor(InterestControlledData))) + 
+  geom_bar(stat="identity") +
+  ggtitle("How interested are you in working with controlled access datasets?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  annotation_custom(textGrob("Extremely\ninterested", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-3.5,ymax=-3.5) +
+  annotation_custom(textGrob("Not at all\ninterested", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-3.5,ymax=-3.5) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = InterestControlledData),
+                  vjust = -1, size=2)
+
+  stylize_bar(dataInterestPlot, usertypeColor = FALSE, sequentialColor = TRUE) +
+    xlab("Interest level") +
+    ylab("Count") +
+    theme(legend.position = "none")
+```
+
+## Takeaway
+
+Over half of respondents reported they are extremely interested in working with controlled access datasets. 
+
+<br/>
+
+# Controlled Access Datasets (specific interest)
+
+## All responses
+
+```{r message=FALSE, echo=FALSE}
+onAnVILDF <- read_delim(here("data/controlledAccessData_codebook.txt"), 
+                        delim = "\t",
+                        col_select = c(whichControlledAccess, AnVIL_Availability))
+
+resultsTidy %>% 
+  prep_df_whichData(onAnVILDF = onAnVILDF) %>% 
+  plot_which_data()
+```
+
+## Just responses from those moderately or extremely experienced with clinical data
+
+```{r message=FALSE, echo=FALSE}
+resultsTidy %>%
+  filter(clinicalFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
+  plot_which_data(subtitle = "Respondents moderately or extremely experienced with clinical data")
+```
+
+## Just responses from those moderately or extremely experienced with human genomic data
+
+```{r message=FALSE, echo=FALSE}
+resultsTidy %>%
+  filter(humanGenomicFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
+  plot_which_data(subtitle = "Respondents moderately or extremely experienced with human genomic data")
+```
+
+## Just responses from those moderately or extremely experienced with non-human genomic data
+
+```{r message=FALSE, echo=FALSE}
+resultsTidy %>%
+  filter(nonHumanGenomicFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
+  plot_which_data(subtitle = "Respondents moderately or extremely experienced with non-human genomic data")
+```
+
+## Takeaway
+
+Of the survey provided choices, respondents were particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted). 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga). The trend of All of Us, UK Biobank, and GTEx being chosen the most was consistent across all 3 research categories (moderately or extremely experienced with clinical, human genomic, or non-human genomic data). 
+
+<br/>
+

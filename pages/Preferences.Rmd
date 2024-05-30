@@ -1,0 +1,192 @@
+---
+title: "Preferences"
+output: html_document
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(tidyverse)
+library(here)
+library(grid) #for Grobs
+library(scales) #pretty breaks
+
+# Inherit `resultsTidy`
+knitr::knit_child(here("TidyData.Rmd"))
+# Import functions to stylize plots
+source(here("resources/scripts/shared_functions.R"))
+```
+
+# Feature Importance Ranking
+
+```{r, message=FALSE, echo = FALSE}
+totalRanksdf <-
+  bind_rows(
+    resultsTidy %>% 
+      select(starts_with("PotentialRank")) %>% 
+      colSums(na.rm = TRUE) %>% 
+      as.data.frame() %>% `colnames<-`(c("totalRank")) %>% 
+      mutate(nranks = sum(resultsTidy$UserType == "Potential User"),
+             avgRank = totalRank / nranks),
+    resultsTidy %>%
+      select(starts_with("CurrentRank")) %>% 
+      colSums(na.rm = TRUE) %>% 
+      as.data.frame() %>% `colnames<-`(c("totalRank")) %>% 
+      mutate(nranks = sum(resultsTidy$UserType == "Current User"),
+             avgRank = totalRank /nranks)
+  ) %>% 
+  mutate(UsertypeFeature = rownames(.)) %>% 
+  separate(UsertypeFeature, c("Usertype", "Feature"), sep = "Rank", remove = TRUE) %>%
+  mutate(Feature = 
+           case_when(Feature == "EasyBillingSetup" ~ "Easy billing setup",
+                     Feature == "FlatRateBilling" ~ "Flat-rate billing rather than use-based",
+                     Feature == "FreeVersion" ~ "Free version with limited compute or storage",
+                     Feature == "SupportDocs" ~ "On demand support and documentation",
+                     Feature == "ToolsData" ~ "Specific tools or datasets are available/supported",
+                     Feature == "CommunityAdoption" ~ "Greater adoption of the AnVIL by the scientific community"),
+         Usertype = factor(case_when(Usertype == "Potential" ~ "Potential User", 
+                                     Usertype == "Current" ~ "Current User"), levels = c("Potential User", "Current User"))
+         )
+```
+
+
+```{r message=FALSE, echo=FALSE}
+gdumbbell <- ggplot(totalRanksdf, 
+                    aes(x = avgRank, 
+                        y = reorder(Feature, -avgRank))) +
+  geom_line() +
+  geom_point(aes(color = Usertype), size = 3) +
+  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL")
+
+
+stylize_dumbbell(gdumbbell, xmax=6, importance = TRUE)
+```
+
+## Takeaways
+
+All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+
+## Potential Follow-ups 
+
+  - Ask what specific tools people want available/supported
+
+<br/>
+
+# Training Workshop Modality Ranking
+
+```{r, message=FALSE, echo=FALSE}
+toPlotTrainingRanks <- bind_rows(
+  resultsTidy %>%
+    filter(UserType == "Current User") %>%
+    select(starts_with("AnVILTrainingWorkshops")) %>%
+    colSums(na.rm = TRUE) %>%
+    as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
+    mutate(nranks = sum(resultsTidy$UserType == "Current User"),
+          avgRank = totalRank / nranks,
+          UserType = "Current User") %>%
+  mutate(TrainingType = rownames(.)) %>%
+  mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", "")),
+  resultsTidy %>%
+    filter(UserType == "Potential User") %>%
+    select(starts_with("AnVILTrainingWorkshops")) %>%
+    colSums() %>%
+    as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
+    mutate(nranks = sum(resultsTidy$UserType == "Potential User"),
+           avgRank = totalRank / nranks,
+           UserType = "Potential User") %>%
+    mutate(TrainingType = rownames(.)) %>%
+    mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", ""))
+  ) %>% mutate(TrainingType = recode(TrainingType, "SpecEvent" = "AnVIL-specific event", "OnSite" = "On-site at my institution", "Conference" = "Conference (e.g., CSHL, AMIA)")) %>%
+  mutate(UserType = factor(UserType, levels = c("Potential User", "Current User")))
+
+```
+
+```{r, message=FALSE, echo=FALSE}
+tdumbbell <- ggplot(toPlotTrainingRanks, 
+                    aes(x = avgRank, 
+                        y = reorder(TrainingType, -avgRank))) +
+  geom_line() +
+  geom_point(aes(color = UserType), size = 3) +
+ 
+  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.")
+  
+stylize_dumbbell(tdumbbell, xmax=5, preference = TRUE)
+```
+
+## Takeaway
+
+Both current and potential users vastly prefer virtual training workshops.
+
+<br/>
+
+# Where analyses are currently run
+
+```{r message=FALSE, echo=FALSE}
+whereRunPlot <- resultsTidy %>% 
+  separate(WhereAnalysesRun, 
+           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"), 
+           sep = ", ", fill = "right") %>% 
+  pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
+  mutate(wherePlatforms = 
+           recode(wherePlatforms, 
+                  "Amazon Web Services (AWS)" = "AWS", 
+                  "Galaxy (usegalaxy.org)" = "Galaxy", 
+                  "Galaxy Australia" = "Galaxy", 
+                  "Google Cloud Platform (GCP)" = "GCP", 
+                  "Institutional High Performance Computing cluster (HPC)" = "Institutional HPC", 
+                  "Personal computer (locally)," = "Personal computer (locally)",
+                  "local server" = "Institutional HPC")
+         ) %>% 
+  group_by(UserType, wherePlatforms) %>% 
+  summarize(count = n()) %>% 
+  drop_na() %>% 
+  ggplot(aes(x = count, 
+             y = reorder(wherePlatforms, count), 
+             fill = UserType)) +
+  geom_bar(stat="identity") + 
+  ggtitle("Where do you currently run analyses?")
+
+stylize_bar(whereRunPlot) +
+  ylab("Platform")
+```
+
+## Takeaways
+
+Institutional HPC and locally/personal computers are the most common responses. Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. We also see that potential users report using Galaxy (a free option) more than current users do. 
+
+<br/>
+
+# DMS compliance/data repositories
+
+TBA
+
+<br/>
+
+# Source for cloud computing funds
+
+```{r message=FALSE, echo=FALSE}
+plotFundingSource <- resultsTidy %>% 
+  separate(FundingSources, 
+           c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG"), 
+           sep = ", ", 
+           fill="right") %>%
+  pivot_longer(starts_with("Which"), 
+               names_to = "WhichChoice", 
+               values_to = "whichFundingSource") %>%
+  drop_na(whichFundingSource) %>%
+  group_by(whichFundingSource, UserType) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(y = reorder(whichFundingSource,count), 
+             x = count, 
+             fill = UserType)) +
+  geom_bar(position = "stack", stat = "identity") +
+  ggtitle("What source(s) of funds do you use to pay for cloud computing?")
+
+stylize_bar(plotFundingSource) +
+  ylab("Funding Source")
+  
+```
+
+## Takeaway
+
+NIH funds (NHGRI or otherwise) as well as institutional funds are the most commonly reported funding sources.
+
+<br/>

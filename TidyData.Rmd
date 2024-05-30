@@ -1,0 +1,610 @@
+---
+title: "Tidy Data"
+author: "Kate Isaac, Elizabeth Humphries, & Ava Hoffman"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r, message=FALSE}
+library(googlesheets4)
+library(tidyverse)
+library(magrittr) #for %<>%
+library(here)
+library(grid) #for Grobs and unit()
+library(scales) #pretty breaks
+```
+
+# Read in data
+
+Data were read in via a Google Sheet on the AnVIL Team Drive.
+
+<details><summary>Import details</summary>
+The google sheet we are reading in is stored in an AnVIL Google drive folder `State of the AnVIL 2024`. Its permissions are restricted such that only people with access can open with the link. Using `gs4_auth()` to authorize my google account before running this code, I needed to change the `scopes` argument, specifically `scopes=spreadsheets.readonly` was necessary. 
+
+In this google sheet, each question is a column, and each response to the survey is a row. If the respondent wasn't asked or didn't answer a specific question, there is an NA in the corresponding row/column. 
+
+```{r, eval=FALSE, echo=FALSE}
+gs4_auth(email = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+resultsRaw <-
+  googlesheets4::read_sheet(
+    "https://docs.google.com/spreadsheets/d/1wDMNC6BD2AaIwh_GOkPTpl1tvAyLwVBQgAvOD2rYrX0/edit?usp=sharing",
+  na = c("NA", "na", ""))
+```
+
+</details>
+
+# Clean data
+
+**Note:** Every code block in this section edits the `resultsTidy` data frame and should be run before plotting within the `# Insights` section below. Subsections are marked according to which Insight they are related to, but cleaning steps like identifying the user type are important for most every plot.
+
+## Set Column Names
+
+We set the column names to simplified column names (e.g., that help us select related columns for various analyses) by reading in a codebook (`data/codebook.txt`). 
+
+<details><summary>Simplifying column names details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We have a codebook that is a tab delimited file and has 4 columns, and each row represents a question in the survey. The first column lists a/the question from the survey (`SurveyColNames`); the second column lists a corresponding simplified column name for that survey question (`SimplifedColNames`); the third column describes the variable format (`VariableFormat`), e.g, is it a double, or a character;  the fourth column gives a lengthier description of the question (`Description`), e.g., who was asked it, what possible answers are, etc.
+
+This code block reads in that codebook and specifically selects the `SimplifiedColNames` column. It then renames the column names of the raw results from the google sheet (where each question is a column) with these simplified column names. 
+
+</details>
+
+```{r, message=FALSE}
+simplifiedColNames <-
+  read_delim(here("data/codebook.txt"),
+             delim = "\t",
+             col_select = SimplifiedColNames)
+resultsTidy <-
+  resultsRaw %>% `colnames<-`(unlist(simplifiedColNames))
+```
+</details>
+
+## Keep last response if duplicated according to email (if email provided)
+
+Choosing to select the last response because the respondent may have spent more time thinking about how they wanted to respond after their initial response. 
+
+<details><summary>Filtering duplicated responses details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+* The `table` function tabulates the number of occurrences, and we tell it to ignore literal NAs. Because providing an email was optional, we expect many NA responses. The `table` function, by ignoring NAs, will return the unique emails and the number of times each email was used. We store the tabulated results in the variable `tabulatedEmails`
+* Using the `sum` function, we look to see how many emails/responses are provided more than once. `tabulatedEmails > 1` is returning a vector of TRUEs and FALSEs where TRUE means that there was more than one instance/count of a given email and FALSE means there wasn't. The `sum` function in essence counts the number of TRUEs and if the `sum` is greater than 0, that means there is at least one duplicated email whose count is greater than 1.
+* `duplicatedEmails` reports which emails are duplicated by using the tabulated/table of emails. First it identifies which emails were observed more than once, using the `which` function, and uses the indices returned from that to index the `names` of the tabulated emails, grabbing the specific emails.
+* We want to know which entries from the overall survey responses to remove for each duplicated email. Ideally, we want to remove the responses all at the same time or go backwards removing one at a time, because we don't want to affect downstream indices. The approach here, keeps track of all the indices of interest and removed them at the same time. 
+  * Therefore, we'll use `lapply` to loop through the duplicated emails (`duplicatedEmails`) and grab the index for survey responses associated with that email address (`which(resultsTidy$Email == duplicatedEmails[x])`).
+  * However, we want to keep the last survey response for each duplicated email. Therefore, we wrap that `which` function in `head(_,-1 )` function so that it grabs all indices except the last one. 
+  * Finally, we `unlist` the indices so that there's a single vector associated with indices for any duplicated email responses to be removed `IDXs_to_remove`. And since we want to remove them all at the same time, we subset  `resultsTidy`, grabbing every row except those in `IDXs_to_remove`, as denoted by the `-`.
+
+</details>
+
+```{r}
+
+tabulatedEmails <- table(resultsTidy$Email, useNA = "no")
+
+if (sum(tabulatedEmails > 1) > 0) {
+  duplicatedEmails <-
+    names(tabulatedEmails)[which(tabulatedEmails > 1)]
+  IDXs_to_remove <-
+    unlist(lapply(1:length(duplicatedEmails), function(x)
+      head(
+        which(resultsTidy$Email == duplicatedEmails[x]),-1
+      )))
+  resultsTidy <- resultsTidy[-IDXs_to_remove, ]
+}
+
+nrow(resultsTidy)
+```
+
+</details>
+
+## Identify type of user
+
+The first question of the poll asks respondents to describe their current usage of the AnVIL and allows us to categorize respondents as potential or current users of the AnVIL.
+
+<details><summary>Question and possible answers</summary>
+
+> How would you describe your current usage the AnVIL platform?
+
+Possible answers include:
+
+* For completed/long-term projects (e.g., occasional updates/maintenance as needed) 
+* For ongoing projects (e.g., consistent project development and/or work) 
+* For short-term projects (e.g., short, intense bursts separated by a few months) 
+* I do no currently use the AnVIL, but have in the past
+* I have never heard of the AnVIL
+* I have never used the AnVIL, but have heard of it.
+
+The first three possible answers represent current or returning AnVIL users. The last three possible answers represent potential AnVIL users.
+
+</details>
+
+<details><summary>Identifying user type details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We use `case_when` to evaluate the response in the `CurrentUsageDescription` column and assign a corresponding, simplified label of "Current User" or "Potential User'. In other words we translate the given response to a user label. Using the `case_when` as the internal nested function of the `mutate` function, means that the translation is then saved in a new column, `UserType`.
+
+</details>
+
+```{r}
+resultsTidy %<>%
+  mutate(
+    UserType = case_when(
+      CurrentUsageDescription == "For ongoing projects (e.g., consistent project development and/or work)" ~ "Current User",
+      CurrentUsageDescription == "For completed/long-term projects (e.g., occasional updates/maintenance as needed)" ~ "Current User",
+      CurrentUsageDescription == "For short-term projects (e.g., short, intense bursts separated by a few months)" ~ "Current User",
+      CurrentUsageDescription == "I do not currently use the AnVIL, but have in the past" ~ "Potential User",
+      CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "Potential User",
+      CurrentUsageDescription == "I have never heard of the AnVIL" ~ "Potential User"
+    )
+  ) %>% 
+  mutate(UserType = factor(UserType, levels = c("Potential User", "Current User")))
+```
+
+</details>
+
+## Institutional Affiliation: Synchronize Institution Names
+
+Users were able to disclose their institutional affiliation using a free text response, therefore we needed to synchronize institution names (example: Johns Hopkins and Johns Hopkins University refer to the same institution, despite the difference in the free responses) and added simplified affiliation categories ([R1 University, R2 University, Community College, Medical Center or School, International Location, Research Center, NIH, Industry, Unknown] and [Research Intensive, Education Focused, and Industry & Other]). The first level of affiliation categories are notated in an institution specific codebook (`data/institution_codebook.txt`)
+
+<details><summary>Question and possible answers</summary>
+
+> What institution are you affiliated with?
+
+Free response for answers
+
+</details>
+
+<details><summary>Institutional affiliation syncronizations details</summary>
+
+This synchronization corrects for the various spellings and capitalizations used for the same institution (ex, Johns Hopkins and Johns Hopkins University refer to the same institution, despite the difference in the free responses).
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We use a `recode()` within a `mutate()` to synchronize the institutional affiliations as necessary
+
+</details>
+
+
+```{r}
+resultsTidy %<>%
+  mutate(
+    InstitutionalAffiliation =
+      recode(
+        InstitutionalAffiliation,
+        "Broad" = "Broad Institute",
+        "broad institute" = "Broad Institute",
+        "CUNY School of Public Health; Roswell Park Comprehensive Cancer Center" = "City University of New York",
+        "harvard" = "Harvard University",
+        "Harvard Public Health" = "Harvard University",
+        "Johns hopkins" = "Johns Hopkins",
+        "Johns Hopkins University" = "Johns Hopkins",
+        "OHSU" = "Oregon Health & Science University",
+        "OHSU (Knight Center)" = "Oregon Health & Science University",
+        "The Ohio State University" = "Ohio State University",
+        "UCSC" = "University of California Santa Cruz",
+        "univ. ca. santa cruz" = "University of California Santa Cruz",
+        "university of California santa cruz" = "University of California Santa Cruz",
+        "UMASS Chan Medical School" = "UMass Chan Medical School",
+        "Umass Chan Medical School" = "UMass Chan Medical School",
+        "Washington University in St Louis" = "Washington University in St. Louis",
+        "yikongene" = "Yikon Genomics",
+        "v" = "Unknown"
+      )
+  )
+```
+
+Elizabeth Humphries grouped institutional affiliations into a limited set of categories: R1 University, R2 University, Community College, Medical Center or School, International Location, Research Center, NIH, Industry, Unknown and we notated those groupings/labels within the `institution_codebook.txt` data file, . Grouping into limited institutional affiliation categories allows us to consolidate free answers for easier data visualization and identification of trends. 
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We use a `read_delim()` to read in the institution_codebook file, and select just the `InstitutionalAffiliation` and `InstitutionalType` columns (ignoring the column that specifies how institutions were entered by survey respondents). We then use a full_join by the `InstitutionalAffiliation` column to add an `InstitutionalType` column such that the category labels are now included as a new column, joining the appropriate values dependent upon the `InstitutionalAffiliation` column.
+
+</details>
+
+```{r, message = FALSE}
+institutionCodeBook <- read_delim(here("data/institution_codebook.txt"), delim="\t", col_select = c(InstitutionalAffiliation, InstitutionalType))
+
+resultsTidy <- full_join(resultsTidy, institutionCodeBook, by = "InstitutionalAffiliation")
+```
+
+Here we even further simplify Institutional Affiliations to focus on Research Intensive, Education Focused, and Industry & Other
+
+This groups R1 University, Research Center, Medical Center or School, and NIH as "Research Intensive"; R2 University & Community College as "Education Focused"; and Industry, International Location, or Unknown as "Industry & Other".
+
+```{r}
+resultsTidy %<>% 
+  mutate(FurtherSimplifiedInstitutionalType = 
+           case_when(
+             InstitutionalType == "R1 University" ~ "Research Intensive",
+             InstitutionalType == "Research Center" ~ "Research Intensive",
+             InstitutionalType == "Medical Center or School" ~ "Research Intensive",
+             InstitutionalType == "NIH" ~ "Research Intensive",
+             InstitutionalType == "R2 University" ~ "Education Focused",
+             InstitutionalType == "Community College" ~ "Education Focused",
+             InstitutionalType == "Industry" ~ "Industry & Other",
+             InstitutionalType == "International Location" ~ "Industry & Other",
+             InstitutionalType == "Unknown" ~ "Industry & Other"
+           )
+         )
+```
+
+</details>
+
+## Highest degree attained
+
+This question allowed more than one response, however, only one response selected two (PhD, MD), which we recoded to be MD/PhD. We simplify the possible responses to group attained or in progress degrees
+
+
+<details><summary>Question and possible answers</summary>
+
+> What is the highest degree you have attained?
+
+Possible answers include (and multiple choices could be selected and would be comma separated if so)
+
+* High school or equivalent
+* Bachelor's degree
+* Master's degree in progress
+* Master's degree
+* PhD in progress
+* PhD
+* MD in progress
+* MD
+* Other (with free text entry)
+
+</details>
+
+<details><summary>Degree recoding details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+Because multiple responses could be selected and those would be comma separated and because free text response was possible if other was selected, we need to tidy the data from this question. From visual inspection of the data, I see that the only time multiple responses were selected were for MD/PhD. No other's were selected. So we'll just recode "PhD, MD" to be "MD/PhD" 
+
+Let's also set the factor levels to follow the general progress of degrees
+
+</details>
+
+
+```{r}
+resultsTidy %<>%
+  mutate(
+    Degrees =
+      factor(recode(Degrees, "PhD, MD" = "MD/PhD"), levels = c("High School or equivalent", "Bachelor's degree", "Master's degree in progress", "Master's degree", "PhD in progress", "PhD", "MD in progress", "MD", "MD/PhD")),
+    FurtherSimplifiedDegrees = recode(Degrees, 
+                                      "Master's degree in progress" = "Master's degree (or in progress)",
+                                      "Master's degree" = "Master's degree (or in progress)",
+                                      "PhD in progress" = "PhD (or in progress)",
+                                      "PhD" = "PhD (or in progress)",
+                                      "MD/PhD" = "MD (MD, MD/PhD, or in progress)", 
+                                      "MD in progress" = "MD (MD, MD/PhD, or in progress)", 
+                                      "MD" = "MD (MD, MD/PhD, or in progress)"
+                          )
+  )
+```
+
+</details>
+
+## Tool Knowledge and Comfort Separate from the AnVIL and on the AnVIL
+
+We want to recode these responses to set the factor level/progression from Don't know it, not at all comfortable, all the way to extremely comfortable and make corresponding integer comfort scores.
+
+<details><summary>Question and possible answers</summary>
+
+>How would you rate your knowledge of or comfort with these technologies (separate from the AnVIL)?
+>How would you rate your knowledge of or comfort with these technologies (on the AnVIL)?
+>How would you rate your knowledge of or comfort with these AnVIL data features?
+Shared technologies between these two questions include
+
+* Jupyter Notebooks: `CurrentAnVILTechJupyterNotebooks` & `AllTechJupyterNotebooks`
+* Bioconductor & RStudio: `CurrentAnVILTechRStudio` & `AllTechRStudio` + `AllTechBioconductor`
+* Galaxy: `CurrentAnVILTechGalaxy` & `AllTechGalaxy`
+* WDL Workflows / Workflows (e.g., WDL): `CurrentAnVILTechWDL` & `AllTechWorkflows`
+* Containers: `CurrentAnVILTechContainers` & `AllTechContainers`
+* Unix / Command Line: `CurrentAnVILTechCommandLine` & `AllTechCommandLine`
+
+Technologies only asked separate from the AnVIL
+
+* Python: `AllTechPython`
+* R: `AllTechR`
+
+Technologies/data features only asked with regards to the AnVIL
+
+* Accessing controlled access datasets: `CurrentAnVILTechAccessData`
+* DUOS (Data Use Oversight System): `CurrentAnVILTechDUOS`
+* Terra on AnVIL (Workspaces): `CurrentAnVILTechTerra`
+* TDR (Terra Data Repository): `CurrentAnVILTechTDR`
+
+Possible answers for each of these questions include
+
+* Don't know it (0)
+* Not at all comfortable (1)
+* Slightly comfortable (2)
+* Somewhat comfortable (3)
+* Moderately comfortable (4)
+* Extremely comfortable (5)
+
+Notated possible "comfort scores" in parentheses next to each possible answer. We'll add these as additional columns that now start with the word "Score_" but otherwise retain the column name, in case it's helpful to still have the words (whose factor level we'll set to reflect the progression of knowledge/comfort).
+
+Responses are NA if the question wasn't asked to the survey taker (e.g., they were a potential user and weren't asked about technologies with regards to the AnVIL)
+
+</details>
+
+<details><summary>Cleaning Comfort level/scores for various technologies and resources details</summary>
+
+It's likely that someone who's a program administrator will select don't know for these.... should we remove them and see how average scores change?
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We select the relevant columns (those that start with "CurrentAnVILTech" or "AllTech") we want to work with. We don't want them to be lists. The non-tidyverse way of doing this would be `unlist(as.character(resultsTidy$PotentialRankEasyBillingSetup))`. We can use the `unnest` tidyverse function with a `keep_empty = TRUE` argument so that it preserves the NULL values. Notice in the non-tidyverse way, we had to use `as.character` in order to preserve the null values. In the tidyverse way, we still have to use an as.character type change before the `unnest`, otherwise, we get an error that double and character values can't be combined. 
+
+After the `unnest` we can use the `mutate` function to first work with these as factors (to set the progression we want from don't know it all the way to extremely comfortable) and then to make the replacements specified above for an integer score in place of the comfort level, placing these scores in new columns with names that begin with "Score_" and fill in the rest of the column name with the corresponding original column name.
+
+</details>
+
+```{r}
+resultsTidy %<>%
+  mutate(across(starts_with(c(
+    "CurrentAnVILTech", "AllTech"
+  )), as.character)) %>%
+  unnest(starts_with(c("CurrentAnVILTech", "AllTech")), keep_empty = TRUE) %>%
+  mutate(across(starts_with(c(
+    "CurrentAnVILTech", "AllTech"
+  )), ~ parse_factor(
+    .,
+    levels = c(
+      "Don't know it",
+      "Not at all comfortable",
+      "Slightly comfortable",
+      "Somewhat comfortable",
+      "Moderately comfortable",
+      "Extremely comfortable"
+    )
+  ))) %>%
+  mutate(across(
+    starts_with(c("CurrentAnVILTech", "ALLTech")),
+    ~ case_when(
+      . == "Don't know it" ~ 0,
+      . == "Not at all comfortable" ~ 1,
+      . == "Slightly comfortable" ~ 2,
+      . == "Somewhat comfortable" ~ 3,
+      . == "Moderately comfortable" ~ 4,
+      . == "Extremely comfortable" ~ 5
+    )
+    ,
+    .names = "Score_{.col}"
+  ))
+```
+
+</details>
+
+## Feature importance: Comparisons of rank of importance of features/resources between Current Users and Potential Users
+
+We want to recode these responses to remove labels and make them integers.
+
+<details><summary>Question and possible answers</summary>
+
+>Rank the following features or resources according to their importance for your continued use of the AnVIL
+
+>Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
+  
+* Easy billing setup
+* Flat-rate billing rather than use-based
+* Free version with limited compute or storage
+* On demand support and documentation
+* Specific tools or datasets are available/supported
+* Greater adoption of the AnVIL by the scientific community
+
+We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
+
+</details>
+
+<details><summary>Cleaning/recoding the feature importance ranks details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We can use `starts_with` to select these columns, specifically focusing on the starts with "PotentialRank" and "CurrentRank". When we made simplified names for the columns, these are the only twelve that start like that. 
+
+Either the 6 CurrentRank or the 6 PotentialRank were asked to each survey taker which means that we expect NULL values in these columns since not every survey taker will have answered all of these questions.
+
+We want to recode the following values
+
+* Replace 1 (Most important in this list) with 1
+* Replace 6 (Least important in this list) with 6
+
+Before we can do that, we first need to change the type of the columns in several ways. We don't want them to be lists. The non-tidyverse way of doing this would be `unlist(as.character(resultsTidy$PotentialRankEasyBillingSetup))`. We can use the `unnest` tidyverse function with a `keep_empty = TRUE` argument so that it preserves the NULL values. Notice in the non-tidyverse way, we had to use `as.character` in order to preserve the null values. In the tidyverse way, we still have to use an as.character type change before the `unnest`, otherwise, we get an error that double and character values can't be combined. 
+
+After the `unnest` we can use the `recode` function to make the replacements specified above. And then we go ahead and change the type from character to integer so that we can compute average rank & plot them more easily. There will be a warning that NAs are introduced by coercion when we change the type to integer. So we add a replacement in the `recode`, changing "NULL" to the `NA_character_`
+
+</details>
+
+```{r}
+resultsTidy %<>%
+  mutate(across(starts_with(c(
+    "PotentialRank", "CurrentRank"
+  )), as.character)) %>%
+  unnest(starts_with(c("PotentialRank", "CurrentRank")), keep_empty = TRUE) %>%
+  mutate(across(
+    starts_with(c("PotentialRank", "CurrentRank")),
+    ~ recode(
+      .x,
+      "1 (Most important in this list)" = "1",
+      "6 (Least important in this list)" = "6",
+      "NULL" = NA_character_
+    )
+  )) %>%
+  mutate(across(starts_with(c(
+    "PotentialRank", "CurrentRank"
+  )), as.integer))
+```
+
+</details>
+
+## Training Modality Preference
+
+We want to recode these responses to remove labels and make them integers.
+
+<details><summary>Question and possible answers</summary>
+
+>Please rank how/where you would prefer to attend AnVIL training workshops.
+
+Possible answers include 
+
+* On-site at my institution: `AnVILTrainingWorkshopsOnSite`
+* Virtual: `AnVILTrainingWorkshopsVirtual`
+* Conference (e.g., CSHL, AMIA): `AnVILTrainingWorkshopsConference`
+* AnVIL-specific event: `AnVILTrainingWorkshopsSpecEvent`
+* Other: `AnVILTrainingWorkshopsOther`
+
+The responses are stored in the starts with `AnVILTrainingWorkshops` columns
+
+</details>
+
+<details><summary>Cleaning the training modality ranks details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We can use `starts_with` to select these columns, specifically focusing on the starts with "AnVILTrainingWorkshops". These are the only 5 that start like that when we made simplified column names. 
+
+We want to recode the following values
+
+* Replace 1 (Most preferred in this list) with 1
+* Replace 5 (Least preferred in this list) with 5
+
+Before we can do that, we first need to change the type of the columns in several ways. We don't want them to be lists. We can use the `unnest` tidyverse function with a `keep_empty = TRUE` argument so that it preserves any NULL values, but first we have to use an `as.character` type change before the `unnest`, otherwise, we get an error that double and character values can't be combined. 
+
+After the `unnest` we can use the `recode` function to make the replacements specified above. And then we go ahead and change the type from character to integer so that we can compute average rank & plot them more easily. There will be a warning that NAs are introduced by coercion when we change the type to integer. So we add a replacement in the `recode`, changing "NULL" to the `NA_character_`
+
+</details>
+
+```{r}
+
+resultsTidy %<>%
+  mutate(across(starts_with(
+    "AnVILTrainingWorkshops"), as.character)) %>%
+  unnest(starts_with("AnVILTrainingWorkshops"), keep_empty = TRUE) %>%
+  mutate(across(
+    starts_with("AnVILTrainingWorkshops"),
+    ~ recode(
+      .x,
+      "1 (Most preferred in this list)" = "1",
+      "5 (Least preferred in this list)" = "5",
+      "NULL" = NA_character_
+    )
+  )) %>%
+  mutate(across(starts_with("AnVILTrainingWorkshop"), as.integer))
+
+```
+
+</details>
+
+## Simplified experience status for various research categories (clinical, human genomics, non-human genomics)
+
+Want to add three columns that act as flags reporting if the respondent is 
+
+* experienced with clinical research, specifically either moderately or extremely experienced in working with human clinical data
+* experienced with human genomics research, specifically is moderately or extremely experienced in working with human genomics data
+* experienced with non-human genomics research expert, specifically is moderately or extremely experienced in working with non-human genomics data
+
+We will use this information later to subset responses when considering popular tools or datasets.
+
+<details><summary>Question and possible answers</summary>
+
+>How much experience do you have analyzing the following data categories?
+
+The three research categories people are asked about include 
+
+* Human Genomic
+* Non-human Genomic
+* Human Clinical
+
+Possible answers include
+
+* Not at all experienced
+* Slightly experienced
+* Somewhat experienced
+* Moderately experienced
+* Extremely experienced.
+
+</details>
+
+<details><summary>Setting research category experience flag details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+We use a `mutate` together with 3 `case_when`'s. 
+
+* If the `HumanClinicalExperience` column response is "Moderately experienced" or "Extremely experienced", we mark that respondent as a human clinical research expert in the `clinicalFlag` column (`TRUE`). Otherwise, we mark a `FALSE` to signify they are not a clinical research expert.
+* If the `HumanGenomicExperience` column response is "Moderately experienced" or "Extremely experienced", we mark that respondent as a human genomic research expert in the `humanGenomicFlag` column (`TRUE`). Otherwise, we again mark a `FALSE` to signify not an expert.
+* If the `NonHumanGenomicExperience` column response is "Moderately experienced" or "Extremely experienced", we mark that respondent as a non-human genomic research expert in the `nonHumanGenomicFlag` column (`TRUE`). Otherwise, we again mark a `FALSE` to signify not an expert.
+
+</details>
+
+```{r}
+resultsTidy %<>%
+  mutate(
+  clinicalFlag = case_when(
+           HumanClinicalExperience == "Moderately experienced" | HumanClinicalExperience == "Extremely experienced" ~ TRUE,
+           .default = FALSE
+         ),
+  humanGenomicFlag = case_when(
+           HumanGenomicExperience == "Moderately experienced" | HumanGenomicExperience == "Extremely experienced" ~ TRUE,
+           .default = FALSE
+         ),
+  nonHumanGenomicFlag = case_when(NonHumanGenomicExperience == "Moderately experienced" | NonHumanGenomicExperience == "Extremely experienced" ~ TRUE,
+          .default = FALSE)
+  )
+```
+
+</details>
+
+## AnVIL Demo Attendance, Awareness, and Utilization
+
+The question asked was pretty granular in describing attendance, use, and awareness of AnVIL Demos. We we want to simplify each possible answer to a binary version of aware of/not aware of or used/have not used.
+
+<details><summary>Question and possible answers</summary>
+
+> Have you attended a monthly AnVIL Demo?
+
+Possible answers include
+
+* Yes, multiple
+* Yes, one
+* Not yet, but am registered to
+* No, but aware of
+* No, didn't know of
+
+</details>
+
+<details><summary>AnVIL Demo recoding details</summary>
+
+<details><summary>Description of variable definitions and steps</summary>
+
+</details>
+
+```{r, message = FALSE}
+resultsTidy %<>% 
+  mutate(AnVILDemo = factor(AnVILDemo, levels = c("Yes, multiple", "Yes, one", "Not yet, but am registered to", "No, but aware of", "No, didn't know of")),
+        AnVILDemoAwareness = factor(case_when(
+          AnVILDemo == "Yes, multiple" ~ "Aware of",
+          AnVILDemo == "Yes, one" ~ "Aware of",
+          AnVILDemo == "Not yet, but am registered to" ~ "Aware of",
+          AnVILDemo == "No, but aware of" ~ "Aware of",
+          AnVILDemo == "No, didn't know of" ~ "Not Aware of"
+        ), levels = c("Not Aware of", "Aware of")),
+        AnVILDemoUse = factor(case_when(
+          AnVILDemo == "Yes, multiple" ~ "Have/will utilize",
+          AnVILDemo == "Yes, one" ~ "Have/will utilize",
+          AnVILDemo == "Not yet, but am registered to" ~ "Have/will utilize",
+          AnVILDemo == "No, but aware of" ~ "Have not utilized",
+          AnVILDemo == "No, didn't know of" ~ "Have not utilized"
+        ), levels = c("Have not utilized", "Have/will utilize"))
+)
+
+```
+
+</details>

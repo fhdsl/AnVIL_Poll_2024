@@ -72,6 +72,7 @@ jobs:
             echo "Key created!"
           fi
           Rscript --vanilla "resources/render.R"
+          rm -rf .secrets
 
       # This checks on the steps before it and makes sure that they completed.
       # If the renders didn't complete we don't want to commit the file changes

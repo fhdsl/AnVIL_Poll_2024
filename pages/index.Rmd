@@ -18,7 +18,7 @@ output:
 - [*Experience*](https://hutchdatascience.org/AnVIL_Poll_2024/Experience.html)
   - Overall, respondents report less comfort with containers or workflows than various programming languages and their IDEs.
   - Many respondents reported being extremely experienced with human genomic data. Far fewer respondents reported being extremely experienced with human clinical or non-human genomic data.
-  - Of the survey provided choices, respondents reported accessing or having interest in accessing All of Us, UK Biobank, and GTEx the most over other controlled access datasets. 
+  - Of the survey provided choices, respondents reported accessing or having interest in accessing All of Us, UK Biobank, and GTEx the most over other controlled access datasets.
 - [*Awareness*](https://hutchdatascience.org/AnVIL_Poll_2024/Awareness.html)
   - Most respondents are aware of AnVIL Demos, even if they haven't attended one.
   - Most respondents are aware of the AnVIL Support Forum, even if they haven't used it.
@@ -38,5 +38,5 @@ Click on each tab to learn more.
 This user poll was conducted in Spring 2024, with the poll open for responses from February 15th to March 25th. 52 total responses were received, two of which were determined to be duplicate users, leaving a total of **50 user responses** used in the analysis. The following graphic shows the arrangement of questions. The first question was used to separate users into "Current" and "Potential" users. Demographics, experience, awareness, and preference related questions were asked of all users.
 
 ```{r, fig.align='center', fig.alt= "Example image", echo = FALSE, out.width="100%"}
-ottrpal::include_slide("https://docs.google.com/presentation/d/1PANHDY3T9wpEX1GBYcqkdYMG0c20UeZPH2pwjHFcLik/edit#slide=id.g2dda935efac_0_0")
+ottrpal::include_slide("https://docs.google.com/presentation/d/1PANHDY3T9wpEX1GBYcqkdYMG0c20UeZPH2pwjHFcLik/edit#slide=id.g272f622aea5_0_34")
 ```

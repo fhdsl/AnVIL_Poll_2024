@@ -25,7 +25,7 @@ output:
 - [*Preferences*](https://hutchdatascience.org/AnVIL_Poll_2024/Preferences.html)
   - All respondents rank having specific tools or datasets supported/available as a very important feature for using the AnVIL (and this feature is ranked the highest by *current users*); *Potential users* rate having a free version with limited compute or storage as the most important feature for their potential use of the AnVIL.
   - All respondents prefer virtual training workshops over other training modalities
-- [*For current users*](https://hutchdatascience.org/AnVIL_Poll_2024/CurrentUserQs.html)
+- [*Current Users*](https://hutchdatascience.org/AnVIL_Poll_2024/CurrentUserQs.html)
   - *For current users*, the most common computational need was needing large amounts of storage.
   - Many users reported they were "extremely likely" to recommend AnVIL, but we'd like to follow up with users who chose differently.
 

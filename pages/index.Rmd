@@ -8,13 +8,26 @@ output:
 
 ### **Results Summary**
 
-- The majority of current users leverage AnVIL for ongoing projects. Potential users were evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
-- Most of the respondents have a PhD or are currently working on a PhD.
-- Many respondents do computational work.
-- Almost all respondents are affiliated with a research intensive institution.
-- PRIMED, GREGoR, and eMERGE were the most popular consortia affiliations. CCDG and GTEx are also represented.
-- *For current users*, the most common computational need was needing large amounts of storage.
-- Many users reported they were "extremely likely" to recommend AnVIL, but we'd like to follow up with users who chose differently.
+- [*Identity User Type*](https://hutchdatascience.org/AnVIL_Poll_2024/IdentifyTypeOfUsers.html)
+  -  The majority of current users leverage AnVIL for ongoing projects. Potential users were evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
+- [*Demographics*](https://hutchdatascience.org/AnVIL_Poll_2024/Demographics.html)
+  - Most of the respondents have a PhD or are currently working on a PhD.
+  - Many respondents do computational work.
+  - Almost all respondents are affiliated with a research intensive institution.
+  - PRIMED, GREGoR, and eMERGE were the most popular consortia affiliations. CCDG and GTEx are also represented.
+- [*Experience*](https://hutchdatascience.org/AnVIL_Poll_2024/Experience.html)
+  - Overall, respondents report less comfort with containers or workflows than various programming languages and their IDEs.
+  - Many respondents reported being extremely experienced with human genomic data. Far fewer respondents reported being extremely experienced with human clinical or non-human genomic data.
+  - Of the survey provided choices, respondents reported accessing or having interest in accessing All of Us, UK Biobank, and GTEx the most over other controlled access datasets. 
+- [*Awareness*](https://hutchdatascience.org/AnVIL_Poll_2024/Awareness.html)
+  - Most respondents are aware of AnVIL Demos, even if they haven't attended one.
+  - Most respondents are aware of the AnVIL Support Forum, even if they haven't used it.
+- [*Preferences*](https://hutchdatascience.org/AnVIL_Poll_2024/Preferences.html)
+  - All respondents rank having specific tools or datasets supported/available as a very important feature for using the AnVIL (and this feature is ranked the highest by *current users*); *Potential users* rate having a free version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+  - All respondents prefer virtual training workshops over other training modalities
+- [*For current users*](https://hutchdatascience.org/AnVIL_Poll_2024/CurrentUserQs.html)
+  - *For current users*, the most common computational need was needing large amounts of storage.
+  - Many users reported they were "extremely likely" to recommend AnVIL, but we'd like to follow up with users who chose differently.
 
 Click on each tab to learn more.
 
@@ -27,6 +40,3 @@ This user poll was conducted in Spring 2024, with the poll open for responses fr
 ```{r, fig.align='center', fig.alt= "Example image", echo = FALSE, out.width="100%"}
 ottrpal::include_slide("https://docs.google.com/presentation/d/1PANHDY3T9wpEX1GBYcqkdYMG0c20UeZPH2pwjHFcLik/edit#slide=id.g2dda935efac_0_0")
 ```
-
-
-

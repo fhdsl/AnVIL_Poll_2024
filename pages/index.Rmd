@@ -8,7 +8,7 @@ output:
 
 ### **Results Summary**
 
-- [*Identity User Type*](https://hutchdatascience.org/AnVIL_Poll_2024/IdentifyTypeOfUsers.html)
+- [*Identify User Type*](https://hutchdatascience.org/AnVIL_Poll_2024/IdentifyTypeOfUsers.html)
   -  The majority of current users leverage AnVIL for ongoing projects. Potential users were evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
 - [*Demographics*](https://hutchdatascience.org/AnVIL_Poll_2024/Demographics.html)
   - Most of the respondents have a PhD or are currently working on a PhD.

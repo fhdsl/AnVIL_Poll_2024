@@ -31,46 +31,46 @@ demoPlotRaw <- resultsTidy %>%
 
 stylize_bar(demoPlotRaw)
 ```  
-  
+
 ## Awareness
 
 ```{r, message=FALSE, echo = FALSE}
-demoPlot <- resultsTidy %>% 
+demoPlot <- resultsTidy %>%
   group_by(UserType, AnVILDemoAwareness) %>%
   summarize(count = n()) %>%
-  ggplot(aes(y = AnVILDemoAwareness, 
-             x = count, 
-             fill = UserType)) + 
+  ggplot(aes(y = AnVILDemoAwareness,
+             x = count,
+             fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
 stylize_bar(demoPlot) +
   ylab("Awareness")
-  
+
 ```
 
 ## Takeaway
 
-Most respondents have not attended an AnVIL Demo. To investigate whether this was an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users. 
+Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users. 
 
 <br/>
 
 # AnVIL Support Forum
 
 ```{r, message=FALSE, echo=FALSE}
-forumdf <- resultsTidy %>% 
-  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, 
-                                         pattern = "No, ", 
-                                         replacement= "No ")) %>% 
-  separate(AnVILSupportForum, 
-           c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
-           sep = ", ", 
-           fill = "right") %>% 
+forumdf <- resultsTidy %>%
+  mutate(AnVILSupportForum = str_replace(AnVILSupportForum,
+                                         pattern = "No, ",
+                                         replacement= "No ")) %>%
+  separate(AnVILSupportForum,
+           c("forumInteractionA", "forumInteractionB", "forumInteractionC"),
+           sep = ", ",
+           fill = "right") %>%
   pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
-  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>% 
-  summarize(count = n()) %>% 
-  drop_na() %>% 
-  mutate(forumInteractionDescription = 
+  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  mutate(forumInteractionDescription =
            factor(forumInteractionDescription, levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
         forumAwareness = factor(
           case_when(
@@ -94,10 +94,10 @@ forumdf <- resultsTidy %>%
 ## Raw Responses
 
 ```{r, message=FALSE, echo=FALSE}
-forumPlotRaw <- ggplot(forumdf, 
-                       aes(y = reorder(forumInteractionDescription, count), 
-                           x = count, 
-                           fill = UserType)) + 
+forumPlotRaw <- ggplot(forumdf,
+                       aes(y = reorder(forumInteractionDescription, count),
+                           x = count,
+                           fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
@@ -107,10 +107,10 @@ stylize_bar(forumPlotRaw)
 ## Awareness
 
 ```{r, message=FALSE, echo=FALSE}
-forumPlot <- ggplot(forumdf, 
-                    aes(y = forumAwareness, 
-                        x = count, 
-                        fill = UserType)) + 
+forumPlot <- ggplot(forumdf,
+                    aes(y = forumAwareness,
+                        x = count,
+                        fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 

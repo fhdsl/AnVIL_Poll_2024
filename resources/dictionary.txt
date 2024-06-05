@@ -16,6 +16,7 @@ codebook
 CSER
 CSHL
 css
+CurrentAnVIL
 CurrentAnVILTech
 CurrentRank
 CurrentRankCommunityAdoption
@@ -28,6 +29,7 @@ CurrentUser
 custimization
 cwrigh
 dbGap
+DMS
 Dockerfile
 Dockerhub
 eMERGE
@@ -46,6 +48,7 @@ GMKF
 GnomAD
 GREGoR
 GTEx
+HPC
 HPRC
 HTTPS
 Humphries
@@ -81,6 +84,7 @@ recoding
 repo
 respondant
 Rmd
+rowname
 RStudio
 subdir
 TCGA

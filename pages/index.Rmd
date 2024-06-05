@@ -17,7 +17,7 @@ output:
   - PRIMED, GREGoR, and eMERGE were the most popular consortia affiliations. CCDG and GTEx are also represented.
 - [*Experience*](https://hutchdatascience.org/AnVIL_Poll_2024/Experience.html)
   - Overall, respondents report less comfort with containers or workflows than various programming languages and their IDEs.
-  - Many respondents reported being extremely experienced with human genomic data. Far fewer respondents reported being extremely experienced with human clinical or non-human genomic data.
+  - Many respondents report being extremely experienced with human genomic data. Far fewer respondents report being extremely experienced with human clinical or non-human genomic data.
   - Of the survey provided choices, respondents reported accessing or having interest in accessing All of Us, UK Biobank, and GTEx the most over other controlled access datasets.
 - [*Awareness*](https://hutchdatascience.org/AnVIL_Poll_2024/Awareness.html)
   - Most respondents are aware of AnVIL Demos, even if they haven't attended one.

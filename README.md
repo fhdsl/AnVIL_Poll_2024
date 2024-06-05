@@ -15,7 +15,7 @@ This repository contains the analyses for the State of the AnVIL 2024 Poll and u
 ### other root directory files of importance
 
 * `config_automation.yml` -- this file specifies which docker image to use for this repo (we made a [specific one](https://hub.docker.com/repository/docker/jhudsl/anvil-poll-2024/general) instead of using default) and further turns on/off various OTTR PR check or rendering steps.
-* `style.css` -- sets the CSS style for the rendered website
+* `style.css` -- sets the CSS style for the rendered website.
 
 ### data sub-folder
 

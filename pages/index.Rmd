@@ -38,3 +38,6 @@ Click on each tab to learn more.
 This user poll was conducted in Spring 2024, with the poll open for responses from February 15th to March 25th. 52 total responses were received, two of which were determined to be duplicate users, leaving a total of **50 user responses** used in the analysis. The following graphic shows the arrangement of questions. The first question was used to separate users into "Current" and "Potential" users. Demographics, experience, awareness, and preference related questions were asked of all users.
 
 ![](https://raw.githubusercontent.com/fhdsl/AnVIL_Poll_2024/main/plots/AnVILPoll2024Flowchart.png)
+
+A sample poll can be [downloaded here](https://drive.google.com/uc?export=download&id=1e8sG6-CXaVSiq8WbQEBvd3MTN6RJkWF0).
+

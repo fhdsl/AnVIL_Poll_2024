@@ -39,5 +39,5 @@ This user poll was conducted in Spring 2024, with the poll open for responses fr
 
 ![](https://raw.githubusercontent.com/fhdsl/AnVIL_Poll_2024/main/plots/AnVILPoll2024Flowchart.png)
 
-A sample poll can be [downloaded here](https://drive.google.com/uc?export=download&id=1e8sG6-CXaVSiq8WbQEBvd3MTN6RJkWF0)
+A sample poll can be [downloaded here](https://drive.google.com/uc?export=download&id=1e8sG6-CXaVSiq8WbQEBvd3MTN6RJkWF0).
 

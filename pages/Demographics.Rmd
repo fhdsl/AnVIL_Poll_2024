@@ -50,24 +50,28 @@ Most of the respondents have a PhD or are currently working on a PhD, though a r
 # Kind of Work
 
 ```{r, message = FALSE, echo = FALSE}
-resultsTidy %>%
+dfForPlotKOW <- resultsTidy %>%
   separate(KindOfWork,
            c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
            sep=", ", fill="right") %>%
   pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
   select(Timestamp, UserType, whichWorkDescription) %>%
   mutate(whichWorkDescription =
-           recode(whichWorkDescription,
-                  "computational education" = "Computational education",
+           recode(whichWorkDescription, 
+                  "computational education" = "Computational education", 
                   "Program administration," = "Program administration"),
          whichWorkDescription = factor(whichWorkDescription),
          Timestamp = factor(Timestamp)
          ) %>%
-  drop_na() %>%
-  ggplot(aes(x = Timestamp,
-             y = whichWorkDescription,
-             fill = whichWorkDescription
-             )) +
+  drop_na()
+
+factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
+
+ggplot(dfForPlotKOW, 
+       aes(x = Timestamp,
+           y = factor(whichWorkDescription, levels = factorLevel),
+           fill = whichWorkDescription
+           )) +
   geom_tile() +
   theme_bw() +
   theme(axis.text.x=element_blank(),
@@ -81,7 +85,7 @@ resultsTidy %>%
 
 ## Takeaway
 
-Only a few responses report project management, leadership, or administration as their only kind of work. This increases our confidence that this won't confound later questions asking about usage of datasets or tools.
+Only a few responses showed project management, leadership, or administration as their only kind of work. This increases our confidence that this won't confound later questions asking about usage of datasets or tools.
 
 ## Potential Follow-ups
 
@@ -93,8 +97,8 @@ Only a few responses report project management, leadership, or administration as
 
 ```{r, message=FALSE, echo = FALSE}
 instPlot <- resultsTidy %>%
-  mutate(FurtherSimplifiedInstitutionalType =
-           factor(FurtherSimplifiedInstitutionalType,
+  mutate(FurtherSimplifiedInstitutionalType = 
+           factor(FurtherSimplifiedInstitutionalType, 
                   levels = c("Industry & Other", "Education Focused", "Research Intensive"))) %>%
   group_by(UserType, FurtherSimplifiedInstitutionalType) %>%
   summarize(InstitutionalCount = n()) %>%
@@ -104,7 +108,7 @@ instPlot <- resultsTidy %>%
     fill = UserType
   )) +
   geom_bar(position = "stack", stat = "identity") +
-  geom_text(aes(label = after_stat(x),
+  geom_text(aes(label = after_stat(x), 
                 group = FurtherSimplifiedInstitutionalType),
             stat = 'summary', fun = sum, hjust = -1, size=2
            ) +
@@ -130,13 +134,13 @@ Most of the individuals using the AnVIL report being affiliated with a research 
 ```{r, message = FALSE, echo = FALSE}
 instPlotB <- resultsTidy %>%
   select(c(UserType, InstitutionalType)) %>%
-  group_by(UserType, InstitutionalType) %>%
+  group_by(UserType, InstitutionalType) %>% 
   summarize(InstitutionalCount = n()) %>%
   ggplot(aes(
     y = reorder(InstitutionalType, InstitutionalCount, sum),
     x = InstitutionalCount,
     fill = UserType
-  )) +
+  )) + 
   geom_bar(position = "stack", stat = "identity") +
   geom_text(
     aes(label = after_stat(x), group = InstitutionalType),
@@ -167,12 +171,13 @@ consortiaTable <- resultsTidy %>%
 ```
 
 
-Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provide an affiliation, with `r nrow(consortiaTable)` unique affiliations represented across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
+Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provided an affiliation, with `r nrow(consortiaTable)` unique affiliations provided across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
 
 ```{r, message = FALSE, echo = FALSE}
-consortia_df <-
-  consortiaTable[which(consortiaTable$count >1),] %>%
+consortia_df <- 
+  consortiaTable[which(consortiaTable$count >1),] %>% 
   rename(`consortium` = whichConsortiumName)
 
 kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
 ```
+

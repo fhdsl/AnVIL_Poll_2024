@@ -51,9 +51,3 @@ This directory also contains the `_site.yml` file which defines what pages are w
 * `dictionary.txt` -- list of words that the OTTR spell checker shouldn't flag as spelling errors.
 * `ignore-urls.txt` -- list of URLs that the OTTR URL checker shouldn't flag as broken.
 * `render.R` -- helper script enabling the rendering of materials that rely on the `googlesheets4` API to read in data.  
-
-## Repository settings requirements/notes
-
-* Needs to enable GitHub Pages
-* Needs either an organization or repository secret for OTTR functionality
-* Needs a google service account key repository secret for reading from google sheets

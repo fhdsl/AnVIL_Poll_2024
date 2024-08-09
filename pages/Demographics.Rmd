@@ -85,7 +85,7 @@ ggplot(dfForPlotKOW,
 
 ## Takeaway
 
-Only a few responses showed project management, leadership, or administration as their only kind of work. This increases our confidence that this won't confound later questions asking about usage of datasets or tools.
+Only a few responses report project management, leadership, or administration as their only kind of work. This increases our confidence that this won't confound later questions asking about usage of datasets or tools.
 
 ## Potential Follow-ups
 
@@ -171,7 +171,7 @@ consortiaTable <- resultsTidy %>%
 ```
 
 
-Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provided an affiliation, with `r nrow(consortiaTable)` unique affiliations provided across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
+Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provide an affiliation, with `r nrow(consortiaTable)` unique affiliations represented across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
 
 ```{r, message = FALSE, echo = FALSE}
 consortia_df <- 

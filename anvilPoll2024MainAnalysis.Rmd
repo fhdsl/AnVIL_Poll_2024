@@ -144,6 +144,10 @@ stylize_bar(degreePlot)
 ggsave(here("plots/degree_furthersimplified_usertype.png"))
 ```
 
+## Demographics: Kind of Work
+
+## Demographics: Consortia Affiliations
+
 ## Experience: Genomics and Clinical Research Experience
 
 **Takeaway:**
@@ -219,9 +223,13 @@ ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
 ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")) #set plot size
 ```
 
+## Experience: General interest in controlled access datasets
+
+**Takeaway:** Over half of respondents report they are extremely interested in working with controlled access datasets.
+
 ## Experience: Controlled Access Datasets
 
-**Takeaway:**
+**Takeaway:** Of the survey provided choices, respondents have accessed or are particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted). 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga). The trend of All of Us, UK Biobank, and GTEx being chosen the most is consistent across all 3 research categories (moderately or extremely experienced with clinical, human genomic, or non-human genomic data).
 
 <details><summary>Question and possible answers</summary>
 
@@ -370,7 +378,9 @@ ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGen
 
 ## Experience: Tool & Resource Knowledge/Comfort level
 
-**Takeaway:**
+**Takeaway:** Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users report similar comfort levels.
+
+Overall, there is less comfort with containers or workflows than using various programming languages and integrated development environments (IDEs).
 
 ### Prepare and plot the data
 
@@ -464,7 +474,24 @@ ggsave(here("plots/tooldataresourcecomfortscore_singlepanel.png"), w = 2200, h =
 
 ## Awareness: AnVIL Demos
 
-**Takeaway:**
+**Takeaway:** Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users.
+
+### Raw responses
+
+```{r echo=FALSE, message=FALSE}
+demoPlotRaw <- resultsTidy %>%
+  group_by(UserType, AnVILDemo) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=reorder(AnVILDemo, count),
+             x = count,
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
+stylize_bar(demoPlotRaw)
+```  
+
+### Responses recoded to focus on awareness
 
 ```{r}
 demoPlot <- resultsTidy %>% 
@@ -482,12 +509,15 @@ stylize_bar(demoPlot) +
 
 ## Awareness: AnVIL Support Forum
 
-**Takeaway:**
+**Takeaway:** Most respondents have not used the AnVIL support forum. We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
 
 ```{r, message=FALSE, echo=FALSE}
 forumdf <- resultsTidy %>% 
-  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, pattern = "No, ", replacement= "No ")) %>% 
-  separate(AnVILSupportForum, c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
+  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, 
+                                         pattern = "No, ", 
+                                         replacement= "No ")) %>% 
+  separate(AnVILSupportForum, 
+           c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
            sep = ", ", 
            fill = "right") %>% 
   pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
@@ -495,7 +525,8 @@ forumdf <- resultsTidy %>%
   summarize(count = n()) %>% 
   drop_na() %>% 
   mutate(forumInteractionDescription = 
-           factor(forumInteractionDescription, levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
+           factor(forumInteractionDescription, 
+                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
         forumAwareness = factor(
           case_when(
           forumInteractionDescription == "Posted in" ~ "Aware of",
@@ -503,17 +534,24 @@ forumdf <- resultsTidy %>%
           forumInteractionDescription == "Read through others' posts" ~ "Aware of",
           forumInteractionDescription == "No but aware of" ~ "Aware of",
           forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
-        ), levels = c("Not Aware of", "Aware of")),
-        forumUse = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Have utilized",
-          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
-          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
-          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
-          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
-        ), levels = c("Have not utilized", "Have utilized"))
+        ), levels = c("Not Aware of", "Aware of"))
 )
 ```
+
+### Raw responses
+
+```{r, message=FALSE, echo=FALSE}
+forumPlotRaw <- ggplot(forumdf,
+                       aes(y = reorder(forumInteractionDescription, count),
+                           x = count,
+                           fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+
+stylize_bar(forumPlotRaw)
+```
+
+### Responses recoded to focus on awareness
 
 ```{r, message=FALSE, echo=FALSE}
 forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) + 
@@ -524,9 +562,26 @@ stylize_bar(forumPlot) +
   ylab("Awareness")
 ```
 
-## Preferences: Feature importance for current vs potential users
+## Preferences: Feature Importance Ranking
 
-**Takeaway:**
+**Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+
+<details><summary>Question and possible answers</summary>
+
+>Rank the following features or resources according to their importance for your continued use of the AnVIL
+
+>Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
+  
+* Easy billing setup
+* Flat-rate billing rather than use-based
+* Free version with limited compute or storage
+* On demand support and documentation
+* Specific tools or datasets are available/supported
+* Greater adoption of the AnVIL by the scientific community
+
+We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
+
+</details>
 
 ### Prepare and plot the data
 
@@ -602,6 +657,17 @@ Finally, we'll reverse the x-axis so that most important is on the right and lea
 </details>
 
 ```{r, message=FALSE, echo = FALSE}
+
+gdumbbell <- ggplot(totalRanksdf, 
+                    aes(x = avgRank, 
+                        y = reorder(Feature, -avgRank))) +
+  geom_line() +
+  geom_point(aes(color = Usertype), size = 3) +
+  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL")
+
+
+stylize_dumbbell(gdumbbell, xmax=6, importance = TRUE)
+
 gdumbbell <- ggplot(totalRanksdf, aes(x = avgRank, y = reorder(Feature, -avgRank))) +
   geom_line() +
   geom_point(aes(color = Usertype), size = 3) +
@@ -634,7 +700,7 @@ ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbb
 
 ## Preferences: Training Workshop Modality
 
-**Takeaway:**
+**Takeaway:** Both current and potential users vastly prefer virtual training workshops.
 
 ### Prepare and plot the data
 
@@ -703,17 +769,92 @@ tdumbbell
 ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot = tdumbbell)
 ```
 
+## Preferences: Where analyses are currently run
+
+**Takeaway:** Institutional HPC and locally/personal computers are the most common responses. Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. We also see that potential users report using Galaxy (a free option) more than current users do. 
+
+## Preferences: DMS compliance/data repositories
+
+## Preferences: Source for cloud computing funds
+
+**Takeaway:** NIH funds (NHGRI or otherwise) as well as institutional funds are the most commonly reported funding sources.
+
 ## Returning User Specific: Likely to recommend?
 
-**Takeaway:**
+**Takeaway:** There's a fairly bimodal distribution here with users either extremely likely or only moderately likely to recommend the AnVIL.
+
+```{r, message = FALSE, echo = FALSE}
+recLikePlot <- resultsTidy %>%
+  group_by(RecommendationLikelihood) %>%
+  summarize(count = n()) %>%
+  drop_na() %>% #not asked to everyone
+  ggplot(aes(x = RecommendationLikelihood,
+             y = count,
+             fill = as.factor(RecommendationLikelihood))) +
+  geom_bar(stat="identity") +
+  ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  annotation_custom(textGrob("Extremely\nlikely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.25,ymax=-1.25) +
+  annotation_custom(textGrob("Not at all\nlikely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.25,ymax=-1.25) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = RecommendationLikelihood),
+                  vjust = -1, size=2)
+
+  stylize_bar(recLikePlot, usertypeColor = FALSE, sequentialColor = TRUE) +
+    xlab("Recommendation likelihood") +
+    ylab("Count") +
+    theme(legend.position = "none")
+```
 
 ## Returning User Specific: Number of years of use
 
 **Takeaway:**
 
+```{r, message = FALSE, echo = FALSE}
+timeUsePlot <- resultsTidy %>%
+  group_by(LengthOfUse) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = LengthOfUse,
+             y = count,
+             fill = "#25445A")) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = count, group = LengthOfUse),
+                  vjust = -1, size=2) +
+  ggtitle("How long have you been using the AnVIL?")
+
+stylize_bar(timeUsePlot, usertypeColor = FALSE, singleColor = TRUE) +
+    xlab("Years of Use") +
+    ylab("Count") +
+    theme(legend.position = "none")
+```
+
 ## Returning User Specific: Foreseeable Computational Needs
 
-**Takeaway:**
+**Takeaway:** Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+compNeedsPlot <- resultsTidy %>%
+  separate(NeededResources,
+           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
+           sep = ", ", fill = "right") %>%
+  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
+  group_by(ResourceDescription) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = count,
+             y = reorder(ResourceDescription, count),
+             fill = "#25445A")) +
+  geom_text(aes(label = count, group = ResourceDescription),
+                  hjust = -1, size=2) +
+  geom_bar(stat = "identity") +
+  ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
+
+  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) +
+    theme(legend.position = "none")
+```
+
 
 ## Session Info and other analysis notes
 
@@ -724,3 +865,4 @@ sessionInfo()
 ```
 
 </details>
+

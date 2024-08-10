@@ -22,20 +22,20 @@ source(here("resources/scripts/shared_functions.R"))
 # Length of Use of the AnVIL
 
 ```{r, message = FALSE, echo = FALSE}
-timeUsePlot <- resultsTidy %>% 
+timeUsePlot <- resultsTidy %>%
   group_by(LengthOfUse) %>%
-  summarize(count = n()) %>% 
+  summarize(count = n()) %>%
   drop_na() %>%
-  ggplot(aes(x = LengthOfUse, 
-             y = count, 
-             fill = "#25445A")) + 
+  ggplot(aes(x = LengthOfUse,
+             y = count,
+             fill = "#25445A")) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = count, group = LengthOfUse),
                   vjust = -1, size=2) +
   ggtitle("How long have you been using the AnVIL?")
 
 stylize_bar(timeUsePlot, usertypeColor = FALSE, singleColor = TRUE) +
-    xlab("Years of Use") + 
+    xlab("Years of Use") +
     ylab("Count") +
     theme(legend.position = "none")
 ```
@@ -49,46 +49,46 @@ We observe a fairly even sampling of the current users with regards to the numbe
 # Foreseeable Computational Needs
 
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
-compNeedsPlot <- resultsTidy %>% 
-  separate(NeededResources, 
-           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"), 
-           sep = ", ", fill = "right") %>% 
-  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>% 
-  group_by(ResourceDescription) %>% 
-  summarize(count = n()) %>% 
+compNeedsPlot <- resultsTidy %>%
+  separate(NeededResources,
+           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
+           sep = ", ", fill = "right") %>%
+  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
+  group_by(ResourceDescription) %>%
+  summarize(count = n()) %>%
   drop_na() %>%
-  ggplot(aes(x = count, 
-             y = reorder(ResourceDescription, count), 
-             fill = "#25445A")) + 
+  ggplot(aes(x = count,
+             y = reorder(ResourceDescription, count),
+             fill = "#25445A")) +
   geom_text(aes(label = count, group = ResourceDescription),
                   hjust = -1, size=2) +
   geom_bar(stat = "identity") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
 
-  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) + 
+  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) +
     theme(legend.position = "none")
 ```
 
 ## Takeaway
 
-Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here was needing large amounts of storage.
+Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
 
 ## Potential Follow-ups
 
   - What do we see in other responses from the "don't know" responses?
-  
+
 <br>
 
-# Recommendation Likelihood 
+# Recommendation Likelihood
 
 ```{r, message = FALSE, echo = FALSE}
-recLikePlot <- resultsTidy %>% 
-  group_by(RecommendationLikelihood) %>% 
+recLikePlot <- resultsTidy %>%
+  group_by(RecommendationLikelihood) %>%
   summarize(count = n()) %>%
   drop_na() %>% #not asked to everyone
-  ggplot(aes(x = RecommendationLikelihood, 
-             y = count, 
-             fill = as.factor(RecommendationLikelihood))) + 
+  ggplot(aes(x = RecommendationLikelihood,
+             y = count,
+             fill = as.factor(RecommendationLikelihood))) +
   geom_bar(stat="identity") +
   ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
   coord_cartesian(clip = "off") +
@@ -107,10 +107,9 @@ recLikePlot <- resultsTidy %>%
 
 ## Takeaway
 
-There's a fairly bimodal distribution here with users either extremely likely or only moderately likely to recommend the AnVIL. 
+There's a fairly bimodal distribution here with users either extremely likely or only moderately likely to recommend the AnVIL.
 
 ## Potential Follow-ups
 
-  - What do we see in other responses from those who are extremely likely to recommend the AnVIL to a colleague? e.g., Are they part of a consortium? 
-  - What do we see in other responses from those who are only moderately or not at all likely to recommend the AnVIL? 
-  
+  - What do we see in other responses from those who are extremely likely to recommend the AnVIL to a colleague? e.g., Are they part of a consortium?
+  - What do we see in other responses from those who are only moderately or not at all likely to recommend the AnVIL?

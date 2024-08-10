@@ -81,10 +81,10 @@ toPlotToolKnowledge <- rows_append(toPlotToolKnowledge, data.frame(
 ```
 
 ```{r message=FALSE, echo=FALSE}
+
 PlotToolKnowledge_customization(ggplot(toPlotToolKnowledge,
        aes(y = reorder(Tool, avgScore), x = avgScore)) +
   geom_point(aes(color = UserType, shape = AnVILorNo)))
-  
 ```
 
 ## Takeaways

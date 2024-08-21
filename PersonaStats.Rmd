@@ -39,17 +39,40 @@ kindOfWorkDF <- resultsTidy %>%
               values_from = whichWorkDescription)
 ```
 
-add a column with the count of number of descriptions for each respondent
+add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
 
 ```{r}
 kindOfWorkDF %<>% mutate(count_na = rowSums(is.na(.)),
                           num_descriptions = ncol(kindOfWorkDF) - 1 - count_na)
+
+numSelected <- table(kindOfWorkDF$num_descriptions) %>% as.data.frame()
+```
+
+what were the most common single responses
+
+```{r}
+pivot_longer(kindOfWorkDF[which(kindOfWorkDF$num_descriptions == 1),], 
+             4:ncol(kindOfWorkDF)-2, 
+             names_to = "colnamesWere", 
+             values_to = "valuesWere") %>% 
+  select(valuesWere) %>% 
+  table() %>% 
+  data.frame() %>% 
+  mutate(percentage_singleDescription_responses = 
+           round(Freq/numSelected[which(numSelected$Var1 == 1), "Freq"]*100,0)) %>% 
+  arrange(-Freq)
 ```
 
 find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe
 
 ```{r}
-numResponsesPerDescription <- data.frame(NumResponses = unlist(lapply(2:(ncol(kindOfWorkDF)-2), function(x) (nrow(kindOfWorkDF) - sum(is.na(kindOfWorkDF[,x]))))), WorkDescription= colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)]) %>%
+numResponsesPerDescription <- data.frame(NumResponses = 
+                                           unlist(lapply(2:(ncol(kindOfWorkDF)-2), 
+                                                         function(x) (nrow(kindOfWorkDF) - sum(is.na(kindOfWorkDF[,x])))
+                                                         )
+                                                  ), 
+                                         WorkDescription = 
+                                           colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)]) %>%
   arrange(-NumResponses)
 numResponsesPerDescription
 ```

@@ -49,6 +49,26 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
   )
 }
 
+PlotToolKnowledge_customization <- function(gplot){
+  return(
+    gplot +
+      scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) +
+      ylab("Tool or Data Resource") +
+      xlab("Average Knowledge or Comfort Score") +
+      theme_bw() +
+      theme(panel.background = element_blank(),
+            panel.grid.minor.x = element_blank()) +
+      annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
+      annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
+      coord_cartesian(clip = "off") +
+      theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+      ggtitle("How would you rate your knowledge of or\ncomfort with these technologies or data features?") +
+      scale_color_manual(values = c("#E0DD10", "#035C94")) +
+      scale_shape_manual(values = c(4, 16)) +
+      theme(legend.title = element_blank())
+  )
+}
+
 prep_df_whichData <- function(subset_df, onAnVILDF = NULL){
   subset_df %<>% separate(AccessWhichControlledData,
                           c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN"),
@@ -111,5 +131,34 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
     coord_cartesian(clip = "off") +
     scale_fill_manual(values = c("#25445A", "#7EBAC0", "grey"))
 
+  return(toreturnplot)
+}
+
+prep_df_typeData <- function(subset_df){
+  subset_df %<>% separate(TypesOfData, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN", "WhichO"), sep = ", ", fill="right") %>%
+    pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichTypeData") %>%
+    drop_na(whichTypeData) %>%
+    group_by(whichTypeData) %>% summarize(count = n()) %>%
+    mutate(whichTypeData =
+             recode(whichTypeData,
+                    "I don't analyze data on AnVIL" = NA_character_,
+                    "I store data in AnVIL. I don’t analyze it." = NA_character_,
+                    "Used in training for analysis of genomes (variant calling)" = "Variant Calling"
+             )
+    ) %>%
+    drop_na(whichTypeData)
+  return(subset_df)
+}
+
+plot_type_data <- function(inputToPlotDF, subtitle = NULL){
+  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count), y = count)) +
+    geom_bar(stat="identity") + 
+    theme_classic() + theme(panel.background = element_blank(), panel.grid = element_blank()) +
+    theme(axis.text.x = element_text(angle=45, hjust=1)) +
+    xlab("Types of data") + ylab("Count") + 
+    ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) +
+    geom_text(aes(label = after_stat(y), group = whichTypeData), 
+              stat = 'summary', fun = sum, vjust = -1, size=2) +
+    coord_cartesian(clip = "off")
   return(toreturnplot)
 }

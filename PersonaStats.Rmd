@@ -1,0 +1,55 @@
+---
+title: "Personas"
+author: "Kate Isaac"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(data.table)
+library(magrittr)
+```
+
+```{r}
+resultsTidy <- readRDS("~/Documents/survey_analyses/AnVIL_Poll_2024/data/resultsTidy.rds")
+```
+
+```{r}
+kindOfWorkDF <- resultsTidy %>%
+  separate(KindOfWork,
+           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
+           sep=", ", fill="right") %>%
+  pivot_longer(starts_with("whichWork"), 
+               values_to = "whichWorkDescription") %>%
+  dplyr::select(Timestamp, UserType, whichWorkDescription) %>%
+  mutate(whichWorkDescription =
+           recode(whichWorkDescription,
+                  "computational education" = "Computational education",
+                  "Program administration," = "Program administration"),
+         whichWorkDescription =
+           factor(whichWorkDescription),
+         Timestamp = 
+           factor(Timestamp)
+         ) %>%
+  drop_na() %>% 
+  pivot_wider(id_cols = Timestamp,
+              names_from = whichWorkDescription,
+              values_from = whichWorkDescription)
+```
+
+add a column with the count of number of descriptions for each respondent
+
+```{r}
+kindOfWorkDF %<>% mutate(count_na = rowSums(is.na(.)),
+                          num_descriptions = ncol(kindOfWorkDF) - 1 - count_na)
+```
+
+find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe
+
+```{r}
+numResponsesPerDescription <- data.frame(NumResponses = unlist(lapply(2:(ncol(kindOfWorkDF)-2), function(x) (nrow(kindOfWorkDF) - sum(is.na(kindOfWorkDF[,x]))))), WorkDescription= colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)]) %>%
+  arrange(-NumResponses)
+numResponsesPerDescription
+```

@@ -39,16 +39,21 @@ kindOfWorkDF <- resultsTidy %>%
               values_from = whichWorkDescription)
 ```
 
+## Number of reported kinds of work description for each response
+
 add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
 
 ```{r}
 kindOfWorkDF %<>% mutate(count_na = rowSums(is.na(.)),
                           num_descriptions = ncol(kindOfWorkDF) - 1 - count_na)
 
-numSelected <- table(kindOfWorkDF$num_descriptions) %>% as.data.frame()
+numSelected <- table(kindOfWorkDF$num_descriptions) %>% 
+  as.data.frame() %>%
+  mutate(percentage_responses = round(Freq/nrow(resultsTidy)*100, 0))
+numSelected
 ```
 
-what were the most common single responses
+## What were the most common single responses
 
 ```{r}
 pivot_longer(kindOfWorkDF[which(kindOfWorkDF$num_descriptions == 1),], 
@@ -62,6 +67,55 @@ pivot_longer(kindOfWorkDF[which(kindOfWorkDF$num_descriptions == 1),],
            round(Freq/numSelected[which(numSelected$Var1 == 1), "Freq"]*100,0)) %>% 
   arrange(-Freq)
 ```
+
+## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided)
+
+Look at [this solution from stackoverflow to find pairs](https://stackoverflow.com/a/62374554), but it only works to find pairs that are right next to each other, ugh. So just wrote my own function.
+
+note that kindOfWorkDF's first column is a timestamp, we don't want that one for this, and the last two columns are a count of number of NAs and number of descriptions given. We don't want those in the pairs either. 
+
+note also combn will also fail if there aren't enough non-NA values, so we want to only select rows with more than one description
+
+Given those two notes, pass this function the following input data frame
+
+`kindOfWorkDF[which(kindOfWorkDf$num_descriptions > 1),-c(1,(ncol(kindOfWorkDF)-1), ncol(kindOfWorkDF))]`
+
+```{r}
+find_pairs <- function(inputDF, rowOI ){
+  pairs <- c()
+  notNA_cols_combos <- t(combn(which(!is.na(inputDF[rowOI,])), 2)) #rows will be indices for each pair
+  for (rowIndex in 1:nrow(notNA_cols_combos)){
+    pairs <- c(pairs, paste0(unlist(inputDF[rowOI, notNA_cols_combos[rowIndex,]]), collapse="-"))
+  }
+  return(pairs)
+}
+```
+
+```{r}
+numSelected %<>% 
+  mutate(Var1 = as.integer(Var1))
+
+kindOfWorkDF_subset <- kindOfWorkDF[which(kindOfWorkDF$num_descriptions > 1),-c(1,(ncol(kindOfWorkDF)-1), ncol(kindOfWorkDF))]
+
+pairs_all <- unlist(lapply(1:nrow(kindOfWorkDF_subset), 
+                           function(x) find_pairs(kindOfWorkDF_subset, x))) %>%
+  as.data.frame() %>%
+  `colnames<-`(c("pairs")) %>%
+  group_by(pairs) %>%
+  mutate(count = n()) %>%
+  ungroup() %>%
+  distinct() %>%
+  arrange(-count) %>%
+  mutate(percentage_notSingleDescription_responses = 
+           round(count/sum(numSelected[which(numSelected$Var1 > 1), "Freq"])*100,0)
+         )
+print(pairs_all, n=nrow(pairs_all))
+  
+```
+
+This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
+
+## How many times was each description selected/reported
 
 find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe
 

@@ -7,12 +7,10 @@ output: html_document
 library(tidyverse)
 library(here)
 
+# Inherit `resultsTidy`
+knitr::knit_child(here("TidyData.Rmd"))
 # Import functions to stylize plots
 source(here("resources/scripts/shared_functions.R"))
-# Inherit `resultsTidy`
-source_rmd(here("TidyData.Rmd"))
-source_rmd(here("anvilPoll2024MainAnalysis.Rmd"))
-source_rmd(here("anvilPoll2024ExtraAnalysis.Rmd"))
 ```
 
 <br/>
@@ -22,6 +20,15 @@ source_rmd(here("anvilPoll2024ExtraAnalysis.Rmd"))
 ## Raw responses
 
 ```{r echo=FALSE, message=FALSE}
+demoPlotRaw <- resultsTidy %>%
+  group_by(UserType, AnVILDemo) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=reorder(AnVILDemo, count),
+             x = count,
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
 stylize_bar(demoPlotRaw)
 ```  
 

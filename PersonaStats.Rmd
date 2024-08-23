@@ -115,6 +115,24 @@ print(pairs_all, n=nrow(pairs_all))
 
 This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
 
+### Simplify this a bit
+
+```{r}
+pairs_all %<>% 
+  mutate(education_flag = str_detect(pairs, "education"),
+         leadership_flag = str_detect(pairs, "management|leadership"),
+         admin_flag = str_detect(pairs, "management|Program"),
+         software_flag = str_detect(pairs, "Computational work|Cloud|Engineering|"),
+         clinical_flag = str_detect(pairs, "Clinical"))
+```
+
+
+```{r}
+pairs_all %>% select(ends_with("flag")) %>% colSums() %>% as.data.frame()
+```
+
+Do we want a column where admin is only flagged if leadership isn't flagged? Do we want this to be simplified to see the flags as pairs like with original descriptions?
+
 ## How many times was each description selected/reported
 
 find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe

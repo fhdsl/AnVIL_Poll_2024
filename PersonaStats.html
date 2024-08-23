@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kate Isaac" />
 
-<meta name="date" content="2024-08-22" />
+<meta name="date" content="2024-08-23" />
 
 <title>Personas</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">Personas</h1>
 <h4 class="author">Kate Isaac</h4>
-<h4 class="date">2024-08-22</h4>
+<h4 class="date">2024-08-23</h4>
 
 </div>
 
@@ -536,6 +536,25 @@ print(pairs_all, n=nrow(pairs_all))</code></pre>
 pairs are made whether there a respondent provided 2, 3, or 5
 descriptions so there will be more pairs than responses that had pairs
 possible, so not sure if the percentage is helpful or not.</p>
+<div id="simplify-this-a-bit" class="section level3">
+<h3>Simplify this a bit</h3>
+<pre class="r"><code>pairs_all %&lt;&gt;% 
+  mutate(education_flag = str_detect(pairs, &quot;education&quot;),
+         leadership_flag = str_detect(pairs, &quot;management|leadership&quot;),
+         admin_flag = str_detect(pairs, &quot;management|Program&quot;),
+         software_flag = str_detect(pairs, &quot;Computational work|Cloud|Engineering|&quot;),
+         clinical_flag = str_detect(pairs, &quot;Clinical&quot;))</code></pre>
+<pre class="r"><code>pairs_all %&gt;% select(ends_with(&quot;flag&quot;)) %&gt;% colSums() %&gt;% as.data.frame()</code></pre>
+<pre><code>##                  .
+## education_flag   9
+## leadership_flag 14
+## admin_flag      13
+## software_flag   26
+## clinical_flag    4</code></pre>
+<p>Do we want a column where admin is only flagged if leadership isn’t
+flagged? Do we want this to be simplified to see the flags as pairs like
+with original descriptions?</p>
+</div>
 </div>
 <div id="how-many-times-was-each-description-selectedreported" class="section level2">
 <h2>How many times was each description selected/reported</h2>

@@ -9,6 +9,7 @@ library(here)
 
 # Inherit `resultsTidy`
 knitr::knit_child(here("TidyData.Rmd"))
+knitr::knit_child(here("anvilPoll2024ExtraAnalysis.Rmd"))
 # Import functions to stylize plots
 source(here("resources/scripts/shared_functions.R"))
 ```
@@ -20,15 +21,6 @@ source(here("resources/scripts/shared_functions.R"))
 ## Raw responses
 
 ```{r echo=FALSE, message=FALSE}
-demoPlotRaw <- resultsTidy %>%
-  group_by(UserType, AnVILDemo) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=reorder(AnVILDemo, count),
-             x = count,
-             fill = UserType)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?")
-
 stylize_bar(demoPlotRaw)
 ```  
 

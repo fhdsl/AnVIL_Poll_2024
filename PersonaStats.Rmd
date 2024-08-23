@@ -7,13 +7,14 @@ output: html_document
 
 ```{r}
 library(tidyverse)
-library(cluster)
+library(dplyr)
 library(data.table)
 library(magrittr)
+library(here)
 ```
 
 ```{r}
-resultsTidy <- readRDS("~/Documents/survey_analyses/AnVIL_Poll_2024/data/resultsTidy.rds")
+resultsTidy <- readRDS(here("data/resultsTidy.rds"))
 ```
 
 ```{r}
@@ -115,24 +116,6 @@ print(pairs_all, n=nrow(pairs_all))
 
 This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
 
-### Simplify this a bit
-
-```{r}
-pairs_all %<>% 
-  mutate(education_flag = str_detect(pairs, "education"),
-         leadership_flag = str_detect(pairs, "management|leadership"),
-         admin_flag = str_detect(pairs, "management|Program"),
-         software_flag = str_detect(pairs, "Computational work|Cloud|Engineering|"),
-         clinical_flag = str_detect(pairs, "Clinical"))
-```
-
-
-```{r}
-pairs_all %>% select(ends_with("flag")) %>% colSums() %>% as.data.frame()
-```
-
-Do we want a column where admin is only flagged if leadership isn't flagged? Do we want this to be simplified to see the flags as pairs like with original descriptions?
-
 ## How many times was each description selected/reported
 
 find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe
@@ -147,4 +130,130 @@ numResponsesPerDescription <- data.frame(NumResponses =
                                            colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)]) %>%
   arrange(-NumResponses)
 numResponsesPerDescription
+```
+
+## Flag personas given all this info
+
+```{r}
+resultsTidy %<>% 
+  mutate(clinical_flag = str_detect(KindOfWork, "Clinical"), #any clinical
+         compOnly_flag = (tolower(KindOfWork) == "computational work"), #only computational
+         education_flag = str_detect(KindOfWork, "education") #any education
+        ) 
+resultsTidy$decision_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) (all(str_detect(tolower(resultsTidy$KindOfWork[x]), c("(project leadership|project management|program administration)","computational work")))))) #function of projects + making decisions
+resultsTidy$admin_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) !any(str_detect(tolower(resultsTidy$KindOfWork[x]), tolower(tolower(setdiff(colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)], c("Project leadership", "Project management", "Program administration"))))))))#project steering or admin only (the project or program descriptions only)
+```
+
+### Which ones don't have an assigned persona?
+
+```{r}
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 0)]
+```
+
+### Which ones have more than one assigned persona and how do we pick one?
+
+```{r}
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 2)]
+```
+
+First appears to be education while the second appears to be decision (because of the leadership and management being present or having education + more than 2 other descriptions)
+
+```{r}
+which_rows <- which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 2)
+               
+updates <- data.frame(Timestamp = 
+                        c(resultsTidy$Timestamp[which_rows[1]], resultsTidy$Timestamp[which_rows[2]]), 
+                      education_flag=
+                        c(TRUE, FALSE), 
+                      decision_flag = 
+                        c(FALSE, TRUE)
+                      )
+
+resultsTidy %<>% dplyr::rows_update(updates, by="Timestamp")
+```
+
+## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona
+
+```{r}
+#CLINICIANS
+clinician_persona <- resultsTidy %>% filter(clinical_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "Clinician") %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+#ANALYSTS
+analyst_persona <- resultsTidy %>% filter(compOnly_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "Analyst") %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+#EDUCATORS
+educator_persona <- resultsTidy %>% filter(education_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "Educator") %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+#DECISION MAKERS/PIs?
+pi_persona <- resultsTidy %>% filter(decision_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "PI") %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+#ADMIN
+admin_persona <- resultsTidy %>% filter(admin_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "Admin") %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+no_persona <- resultsTidy %>% filter(clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(count = n(),
+         persona = "None Assigned") %>%
+  select(UserType, KindOfWork, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+save(clinician_persona, 
+     analyst_persona,
+     educator_persona,
+     pi_persona,
+     admin_persona,
+     no_persona,
+     file = here("data/persona_classifications.rdata"))
+```
+
+```{r}
+persona_df <- rbind(clinician_persona, 
+     analyst_persona,
+     educator_persona,
+     pi_persona,
+     admin_persona,
+     no_persona) %>% select(-count)
 ```

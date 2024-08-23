@@ -3,6 +3,13 @@
 library(magrittr)
 library(tidyverse)
 
+source_rmd <- function(file, ...) {
+  tmp_file <- tempfile(fileext=".R")
+  on.exit(unlink(tmp_file), add = TRUE)
+  knitr::purl(file, output=tmp_file)
+  source(file = tmp_file, ...)
+}
+
 stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE){
   if (usertypeColor) {
     fillColors <- c("#E0DD10", "#035C94")

@@ -14,7 +14,8 @@ library(grid) #for Grobs and unit()
 library(ggrepel) #for geom_text_repel()
 library(patchwork)
 
-knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
+source(here("resources/scripts/shared_functions.R"))
+source_rmd(here("anvilPoll2024MainAnalysis.Rmd"))
 ```
 
 # Demographics

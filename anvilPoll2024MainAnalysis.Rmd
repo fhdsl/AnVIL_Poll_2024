@@ -11,7 +11,7 @@ library(here)
 library(tidyverse)
 library(magrittr)
 library(grid) #for Grobs
-
+library(scales)
 
 knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
 source(here("resources/scripts/shared_functions.R"))

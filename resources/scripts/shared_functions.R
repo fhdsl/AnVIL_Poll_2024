@@ -49,6 +49,26 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
   )
 }
 
+PlotToolKnowledge_customization <- function(gplot){
+  return(
+    gplot +
+      scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) +
+      ylab("Tool or Data Resource") +
+      xlab("Average Knowledge or Comfort Score") +
+      theme_bw() +
+      theme(panel.background = element_blank(),
+            panel.grid.minor.x = element_blank()) +
+      annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
+      annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
+      coord_cartesian(clip = "off") +
+      theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+      ggtitle("How would you rate your knowledge of or\ncomfort with these technologies or data features?") +
+      scale_color_manual(values = c("#E0DD10", "#035C94")) +
+      scale_shape_manual(values = c(4, 16)) +
+      theme(legend.title = element_blank())
+  )
+}
+
 prep_df_whichData <- function(subset_df, onAnVILDF = NULL){
   subset_df %<>% separate(AccessWhichControlledData,
                           c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN"),

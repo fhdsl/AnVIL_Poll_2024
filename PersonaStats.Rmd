@@ -257,3 +257,31 @@ persona_df <- rbind(clinician_persona,
      admin_persona,
      no_persona) %>% select(-count)
 ```
+
+```{r}
+resultsTidy %<>% 
+  mutate(
+    persona = case_when(
+      clinical_flag == TRUE ~ "Clinician",
+      compOnly_flag == TRUE ~ "Analyst",
+      education_flag == TRUE ~ "Educator",
+      decision_flag == TRUE ~ "PI",
+      admin_flag == TRUE ~ "Admin",
+      clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE ~ "None assigned"
+    )
+  )
+```
+
+```{r}
+ssPersonas <- gs4_create(name = "StateOfTheAnVIL_ResponsesPersonas", sheets = c("Personas", "AllResultsWithPersonas"))
+```
+
+```{r}
+sheet_write(data=persona_df, ss = ssPersonas, sheet ="Personas")
+```
+
+```{r}
+sheet_write(data=resultsTidy, ss=ssPersonas, sheet="AllResultsWithPersonas")
+```
+
+Couldn't figure out how to move the file from my drive to a shared drive as every path I tried gave me errors, so I manually moved it on google drive.

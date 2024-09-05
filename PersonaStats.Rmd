@@ -17,59 +17,39 @@ library(here)
 resultsTidy <- readRDS(here("data/resultsTidy.rds"))
 ```
 
-```{r}
-kindOfWorkDF <- resultsTidy %>%
-  separate(KindOfWork,
-           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
-           sep=", ", fill="right") %>%
-  pivot_longer(starts_with("whichWork"), 
-               values_to = "whichWorkDescription") %>%
-  dplyr::select(Timestamp, UserType, whichWorkDescription) %>%
-  mutate(whichWorkDescription =
-           recode(whichWorkDescription,
-                  "computational education" = "Computational education",
-                  "Program administration," = "Program administration"),
-         whichWorkDescription =
-           factor(whichWorkDescription),
-         Timestamp = 
-           factor(Timestamp)
-         ) %>%
-  drop_na() %>% 
-  pivot_wider(id_cols = Timestamp,
-              names_from = whichWorkDescription,
-              values_from = whichWorkDescription)
+```{r, eval=FALSE}
+kindOfWorkDF <- 
+  resultsTidy %>% 
+  select(Timestamp, KindOfWork) %>% 
+  separate_longer_delim(KindOfWork, delim = ", ") %>% 
+  mutate(KindOfWork = recode(KindOfWork, "Program administration," = "Program administration", "computational education" = "Computational education"),
+         value = TRUE) %>% 
+  pivot_wider(names_from = KindOfWork, values_from = value, values_fill = FALSE)
 ```
 
-## Number of reported kinds of work description for each response
+## Number of reported kinds of work description for each response -- adjusted for new df
 
 add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
 
 ```{r}
-kindOfWorkDF %<>% mutate(count_na = rowSums(is.na(.)),
-                          num_descriptions = ncol(kindOfWorkDF) - 1 - count_na)
+numSelected <- kindOfWorkDF %>% select(!Timestamp) %>% rowSums()
 
-numSelected <- table(kindOfWorkDF$num_descriptions) %>% 
-  as.data.frame() %>%
-  mutate(percentage_responses = round(Freq/nrow(resultsTidy)*100, 0))
-numSelected
+numSelectedDF <- tibble("X" = numSelected) %>% count(X) %>%
+  mutate(percentage_responses = round(n/nrow(resultsTidy)*100, 0))
+
+numSelectedDF
 ```
 
-## What were the most common single responses
+## What were the most common single responses -- adjusted for new df
 
 ```{r}
-pivot_longer(kindOfWorkDF[which(kindOfWorkDF$num_descriptions == 1),], 
-             4:ncol(kindOfWorkDF)-2, 
-             names_to = "colnamesWere", 
-             values_to = "valuesWere") %>% 
-  select(valuesWere) %>% 
-  table() %>% 
-  data.frame() %>% 
-  mutate(percentage_singleDescription_responses = 
-           round(Freq/numSelected[which(numSelected$Var1 == 1), "Freq"]*100,0)) %>% 
-  arrange(-Freq)
+singleResponseRows <- which(rowSums(kindOfWorkDF[2:ncol(kindOfWorkDF)]) == 1) #these rows are responses where they only provided one description
+tibble("description" = unlist(lapply(1:length(singleResponseRows), function(x) colnames(kindOfWorkDF)[which(kindOfWorkDF[singleResponsesRows[x],] == TRUE)]))) %>%  #for those rows, find the corresponding columns that are true and add the column names to a vector
+  count(description) %>% #count the number of times each of those descriptions is there
+  arrange(-n) #arrange in descending order
 ```
 
-## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided)
+## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided) -- STILL NEED TO ADJUST
 
 Look at [this solution from stackoverflow to find pairs](https://stackoverflow.com/a/62374554), but it only works to find pairs that are right next to each other, ugh. So just wrote my own function.
 
@@ -93,8 +73,8 @@ find_pairs <- function(inputDF, rowOI ){
 ```
 
 ```{r}
-numSelected %<>% 
-  mutate(Var1 = as.integer(Var1))
+numSelectedDF %<>% 
+  mutate(X = as.integer(X))
 
 kindOfWorkDF_subset <- kindOfWorkDF[which(kindOfWorkDF$num_descriptions > 1),-c(1,(ncol(kindOfWorkDF)-1), ncol(kindOfWorkDF))]
 
@@ -108,7 +88,7 @@ pairs_all <- unlist(lapply(1:nrow(kindOfWorkDF_subset),
   distinct() %>%
   arrange(-count) %>%
   mutate(percentage_notSingleDescription_responses = 
-           round(count/sum(numSelected[which(numSelected$Var1 > 1), "Freq"])*100,0)
+           round(count/sum(numSelected[which(numSelected$X > 1), "Freq"])*100,0)
          )
 print(pairs_all, n=nrow(pairs_all))
   
@@ -116,65 +96,92 @@ print(pairs_all, n=nrow(pairs_all))
 
 This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
 
-## How many times was each description selected/reported
-
-find a vector with the count of number of responses for each description, add the descriptions as a column, turning this into a dataframe
+## How many times was each description selected/reported -- adjusted for new DF
 
 ```{r}
-numResponsesPerDescription <- data.frame(NumResponses = 
-                                           unlist(lapply(2:(ncol(kindOfWorkDF)-2), 
-                                                         function(x) (nrow(kindOfWorkDF) - sum(is.na(kindOfWorkDF[,x])))
-                                                         )
-                                                  ), 
-                                         WorkDescription = 
-                                           colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)]) %>%
-  arrange(-NumResponses)
+numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[,2:ncol(kindOfWorkDF)])) %>% 
+  arrange(-n)
+
 numResponsesPerDescription
 ```
 
-## Flag personas given all this info
+## Flag personas given all this info -- not affected by new df
 
 ```{r}
-resultsTidy %<>% 
-  mutate(clinical_flag = str_detect(KindOfWork, "Clinical"), #any clinical
-         compOnly_flag = (tolower(KindOfWork) == "computational work"), #only computational
-         education_flag = str_detect(KindOfWork, "education") #any education
-        ) 
-resultsTidy$decision_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) (all(str_detect(tolower(resultsTidy$KindOfWork[x]), c("(project leadership|project management|program administration)","computational work")))))) #function of projects + making decisions
-resultsTidy$admin_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) !any(str_detect(tolower(resultsTidy$KindOfWork[x]), tolower(tolower(setdiff(colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF)-2)], c("Project leadership", "Project management", "Program administration"))))))))#project steering or admin only (the project or program descriptions only)
+resultsTidy %<>%
+  mutate(
+    clinical_flag = str_detect(KindOfWork, "Clinical"), #any clinical
+    compOnly_flag = (tolower(KindOfWork) == "computational work"),#only computational
+    education_flag = str_detect(KindOfWork, "education") #any education
+  )
+
+resultsTidy$decision_flag <- unlist(lapply(1:nrow(resultsTidy), function(x)
+  (all(
+    str_detect(
+      tolower(resultsTidy$KindOfWork[x]),
+      c(
+        "(project leadership|project management|program administration)",
+        "computational work"
+      )
+    )
+  )))) #function of projects + making decisions
+resultsTidy$admin_flag <- unlist(lapply(1:nrow(resultsTidy), function(x)
+  ! any(str_detect(
+    tolower(resultsTidy$KindOfWork[x]), tolower(tolower(setdiff(
+      colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF) - 2)],
+      c(
+        "Project leadership",
+        "Project management",
+        "Program administration"
+      )
+    )))
+  ))))#project steering or admin only (the project or program descriptions only)
 ```
 
 ### Which ones don't have an assigned persona?
 
 ```{r}
-resultsTidy$KindOfWork[which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 0)]
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[, c("clinical_flag",
+                                                     "compOnly_flag",
+                                                     "education_flag",
+                                                     "decision_flag",
+                                                     "admin_flag")]) == 0)]
 ```
 
 ### Which ones have more than one assigned persona and how do we pick one?
 
 ```{r}
-resultsTidy$KindOfWork[which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 2)]
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[, c("clinical_flag",
+                                                     "compOnly_flag",
+                                                     "education_flag",
+                                                     "decision_flag",
+                                                     "admin_flag")]) == 2)]
 ```
 
 First appears to be education while the second appears to be decision (because of the leadership and management being present or having education + more than 2 other descriptions)
 
 ```{r}
-which_rows <- which(rowSums(resultsTidy[,c("clinical_flag", "compOnly_flag", "education_flag", "decision_flag", "admin_flag")]) == 2)
+which_rows <- which(rowSums(resultsTidy[, c("clinical_flag",
+                                            "compOnly_flag",
+                                            "education_flag",
+                                            "decision_flag",
+                                            "admin_flag")]) == 2)
                
-updates <- data.frame(Timestamp = 
-                        c(resultsTidy$Timestamp[which_rows[1]], resultsTidy$Timestamp[which_rows[2]]), 
-                      education_flag=
-                        c(TRUE, FALSE), 
-                      decision_flag = 
-                        c(FALSE, TRUE)
-                      )
+updates <- data.frame(
+  Timestamp =
+    c(resultsTidy$Timestamp[which_rows[1]], resultsTidy$Timestamp[which_rows[2]]),
+  education_flag =
+    c(TRUE, FALSE),
+  decision_flag =
+    c(FALSE, TRUE)
+)
 
 resultsTidy %<>% dplyr::rows_update(updates, by="Timestamp")
 ```
 
-## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona
+## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona -- not affected by new df
 
-```{r}
+```{r, eval=FALSE}
 #CLINICIANS
 clinician_persona <- resultsTidy %>% filter(clinical_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -185,7 +192,7 @@ clinician_persona <- resultsTidy %>% filter(clinical_flag == TRUE) %>%
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 #ANALYSTS
 analyst_persona <- resultsTidy %>% filter(compOnly_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -196,7 +203,7 @@ analyst_persona <- resultsTidy %>% filter(compOnly_flag == TRUE) %>%
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 #EDUCATORS
 educator_persona <- resultsTidy %>% filter(education_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -207,7 +214,7 @@ educator_persona <- resultsTidy %>% filter(education_flag == TRUE) %>%
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 #DECISION MAKERS/PIs?
 pi_persona <- resultsTidy %>% filter(decision_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -218,7 +225,7 @@ pi_persona <- resultsTidy %>% filter(decision_flag == TRUE) %>%
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 #ADMIN
 admin_persona <- resultsTidy %>% filter(admin_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -229,7 +236,7 @@ admin_persona <- resultsTidy %>% filter(admin_flag == TRUE) %>%
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 no_persona <- resultsTidy %>% filter(clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE) %>%
   group_by(UserType, ContactWillingness) %>%
   mutate(count = n(),
@@ -239,7 +246,7 @@ no_persona <- resultsTidy %>% filter(clinical_flag == FALSE & compOnly_flag == F
   distinct()
 ```
 
-```{r}
+```{r, eval=FALSE}
 save(clinician_persona, 
      analyst_persona,
      educator_persona,
@@ -249,7 +256,7 @@ save(clinician_persona,
      file = here("data/persona_classifications.rdata"))
 ```
 
-```{r}
+```{r, eval=FALSE}
 persona_df <- rbind(clinician_persona, 
      analyst_persona,
      educator_persona,
@@ -258,7 +265,7 @@ persona_df <- rbind(clinician_persona,
      no_persona) %>% select(-count)
 ```
 
-```{r}
+```{r, eval=FALSE}
 resultsTidy %<>% 
   mutate(
     persona = case_when(
@@ -272,15 +279,15 @@ resultsTidy %<>%
   )
 ```
 
-```{r}
+```{r, eval=FALSE}
 ssPersonas <- gs4_create(name = "StateOfTheAnVIL_ResponsesPersonas", sheets = c("Personas", "AllResultsWithPersonas"))
 ```
 
-```{r}
+```{r, eval=FALSE}
 sheet_write(data=persona_df, ss = ssPersonas, sheet ="Personas")
 ```
 
-```{r}
+```{r, eval=FALSE}
 sheet_write(data=resultsTidy, ss=ssPersonas, sheet="AllResultsWithPersonas")
 ```
 

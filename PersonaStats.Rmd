@@ -17,7 +17,7 @@ library(here)
 resultsTidy <- readRDS(here("data/resultsTidy.rds"))
 ```
 
-```{r, eval=FALSE}
+```{r}
 kindOfWorkDF <- 
   resultsTidy %>% 
   select(Timestamp, KindOfWork) %>% 
@@ -27,7 +27,7 @@ kindOfWorkDF <-
   pivot_wider(names_from = KindOfWork, values_from = value, values_fill = FALSE)
 ```
 
-## Number of reported kinds of work description for each response -- adjusted for new df
+## Number of reported kinds of work description for each response 
 
 add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
 
@@ -40,33 +40,33 @@ numSelectedDF <- tibble("X" = numSelected) %>% count(X) %>%
 numSelectedDF
 ```
 
-## What were the most common single responses -- adjusted for new df
+## What were the most common single responses 
 
 ```{r}
 singleResponseRows <- which(rowSums(kindOfWorkDF[2:ncol(kindOfWorkDF)]) == 1) #these rows are responses where they only provided one description
-tibble("description" = unlist(lapply(1:length(singleResponseRows), function(x) colnames(kindOfWorkDF)[which(kindOfWorkDF[singleResponsesRows[x],] == TRUE)]))) %>%  #for those rows, find the corresponding columns that are true and add the column names to a vector
+tibble("description" = unlist(lapply(1:length(singleResponseRows), function(x) colnames(kindOfWorkDF)[which(kindOfWorkDF[singleResponseRows[x],] == TRUE)]))) %>%  #for those rows, find the corresponding columns that are true and add the column names to a vector
   count(description) %>% #count the number of times each of those descriptions is there
   arrange(-n) #arrange in descending order
 ```
 
-## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided) -- STILL NEED TO ADJUST
+## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided)
 
 Look at [this solution from stackoverflow to find pairs](https://stackoverflow.com/a/62374554), but it only works to find pairs that are right next to each other, ugh. So just wrote my own function.
 
-note that kindOfWorkDF's first column is a timestamp, we don't want that one for this, and the last two columns are a count of number of NAs and number of descriptions given. We don't want those in the pairs either. 
+note that kindOfWorkDF's first column is a timestamp, we don't want that one for this
 
 note also combn will also fail if there aren't enough non-NA values, so we want to only select rows with more than one description
 
 Given those two notes, pass this function the following input data frame
 
-`kindOfWorkDF[which(kindOfWorkDf$num_descriptions > 1),-c(1,(ncol(kindOfWorkDF)-1), ncol(kindOfWorkDF))]`
+`kindOfWorkDF[which(rowSums(kindOfWorkDF[,2:ncol(kindOfWorkDF)]) > 1),-c(1)]`
 
 ```{r}
 find_pairs <- function(inputDF, rowOI ){
   pairs <- c()
-  notNA_cols_combos <- t(combn(which(!is.na(inputDF[rowOI,])), 2)) #rows will be indices for each pair
+  notNA_cols_combos <- t(combn(which(inputDF[rowOI,] == TRUE), 2)) #rows will be indices for each pair
   for (rowIndex in 1:nrow(notNA_cols_combos)){
-    pairs <- c(pairs, paste0(unlist(inputDF[rowOI, notNA_cols_combos[rowIndex,]]), collapse="-"))
+    pairs <- c(pairs, paste0(unlist(colnames(inputDF)[notNA_cols_combos[rowIndex,]]), collapse="-"))
   }
   return(pairs)
 }
@@ -76,7 +76,7 @@ find_pairs <- function(inputDF, rowOI ){
 numSelectedDF %<>% 
   mutate(X = as.integer(X))
 
-kindOfWorkDF_subset <- kindOfWorkDF[which(kindOfWorkDF$num_descriptions > 1),-c(1,(ncol(kindOfWorkDF)-1), ncol(kindOfWorkDF))]
+kindOfWorkDF_subset <- kindOfWorkDF[which(rowSums(kindOfWorkDF[,2:ncol(kindOfWorkDF)]) > 1),-c(1)]
 
 pairs_all <- unlist(lapply(1:nrow(kindOfWorkDF_subset), 
                            function(x) find_pairs(kindOfWorkDF_subset, x))) %>%
@@ -88,7 +88,7 @@ pairs_all <- unlist(lapply(1:nrow(kindOfWorkDF_subset),
   distinct() %>%
   arrange(-count) %>%
   mutate(percentage_notSingleDescription_responses = 
-           round(count/sum(numSelected[which(numSelected$X > 1), "Freq"])*100,0)
+           round(count/sum(numSelectedDF[which(numSelectedDF$X > 1), "n"])*100,0)
          )
 print(pairs_all, n=nrow(pairs_all))
   
@@ -96,7 +96,7 @@ print(pairs_all, n=nrow(pairs_all))
 
 This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
 
-## How many times was each description selected/reported -- adjusted for new DF
+## How many times was each description selected/reported 
 
 ```{r}
 numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[,2:ncol(kindOfWorkDF)])) %>% 
@@ -105,7 +105,7 @@ numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[,2:ncol(kind
 numResponsesPerDescription
 ```
 
-## Flag personas given all this info -- not affected by new df
+## Flag personas given all this info 
 
 ```{r}
 resultsTidy %<>%
@@ -179,9 +179,9 @@ updates <- data.frame(
 resultsTidy %<>% dplyr::rows_update(updates, by="Timestamp")
 ```
 
-## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona -- not affected by new df
+## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona 
 
-```{r, eval=FALSE}
+```{r}
 #CLINICIANS
 clinician_persona <- resultsTidy %>% filter(clinical_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -192,7 +192,7 @@ clinician_persona <- resultsTidy %>% filter(clinical_flag == TRUE) %>%
   distinct()
 ```
 
-```{r, eval=FALSE}
+```{r}
 #ANALYSTS
 analyst_persona <- resultsTidy %>% filter(compOnly_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -203,7 +203,7 @@ analyst_persona <- resultsTidy %>% filter(compOnly_flag == TRUE) %>%
   distinct()
 ```
 
-```{r, eval=FALSE}
+```{r}
 #EDUCATORS
 educator_persona <- resultsTidy %>% filter(education_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -214,7 +214,7 @@ educator_persona <- resultsTidy %>% filter(education_flag == TRUE) %>%
   distinct()
 ```
 
-```{r, eval=FALSE}
+```{r}
 #DECISION MAKERS/PIs?
 pi_persona <- resultsTidy %>% filter(decision_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -225,7 +225,7 @@ pi_persona <- resultsTidy %>% filter(decision_flag == TRUE) %>%
   distinct()
 ```
 
-```{r, eval=FALSE}
+```{r}
 #ADMIN
 admin_persona <- resultsTidy %>% filter(admin_flag == TRUE) %>%
   group_by(UserType, ContactWillingness) %>%
@@ -236,7 +236,7 @@ admin_persona <- resultsTidy %>% filter(admin_flag == TRUE) %>%
   distinct()
 ```
 
-```{r, eval=FALSE}
+```{r}
 no_persona <- resultsTidy %>% filter(clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE) %>%
   group_by(UserType, ContactWillingness) %>%
   mutate(count = n(),
@@ -256,7 +256,7 @@ save(clinician_persona,
      file = here("data/persona_classifications.rdata"))
 ```
 
-```{r, eval=FALSE}
+```{r}
 persona_df <- rbind(clinician_persona, 
      analyst_persona,
      educator_persona,
@@ -265,7 +265,7 @@ persona_df <- rbind(clinician_persona,
      no_persona) %>% select(-count)
 ```
 
-```{r, eval=FALSE}
+```{r}
 resultsTidy %<>% 
   mutate(
     persona = case_when(

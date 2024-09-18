@@ -774,7 +774,10 @@ ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot 
 
 ## Preferences: Where analyses are currently run
 
-**Takeaway:** Institutional HPC and locally/personal computers are the most common responses. Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. We also see that potential users report using Galaxy (a free option) more than current users do. 
+**Takeaway:** Institutional HPC and locally/personal computers are the most common responses. 
+
+- Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. 
+- We also see that potential users report using Galaxy (a free option) more than current users do. 
 
 ## Preferences: DMS compliance/data repositories
 

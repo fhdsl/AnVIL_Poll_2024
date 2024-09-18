@@ -862,7 +862,7 @@ compNeedsPlot <- resultsTidy %>%
 ```
 
 
-## Session Info and other analysis notes
+## Session Info
 
 <details><summary>Session Info</summary>
 

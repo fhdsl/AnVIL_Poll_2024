@@ -509,7 +509,10 @@ stylize_bar(demoPlot) +
 
 ## Awareness: AnVIL Support Forum
 
-**Takeaway:** Most respondents have not used the AnVIL support forum. We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
+**Takeaway:** Most respondents have not used the AnVIL support forum. 
+
+- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. 
+- While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
 
 ```{r, message=FALSE, echo=FALSE}
 forumdf <- resultsTidy %>% 

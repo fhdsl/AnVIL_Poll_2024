@@ -815,7 +815,7 @@ recLikePlot <- resultsTidy %>%
 
 ## Returning User Specific: Number of years of use
 
-**Takeaway:**
+**Takeaway:** Respondents have a range of experience on AnVIL.
 
 ```{r, message = FALSE, echo = FALSE}
 timeUsePlot <- resultsTidy %>%

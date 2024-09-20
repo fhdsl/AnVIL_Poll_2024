@@ -2,7 +2,7 @@
 Analysis of the State of the AnVIL 2024 Poll
 
 ## Purpose
-This repository contains the analyses for the State of the AnVIL 2024 Poll and using the [OTTR website template](https://github.com/jhudsl/OTTR_Template_Website) renders a [website that provides an overview of the main results](https://hutchdatascience.org/AnVIL_Poll_2024/) for each section of the poll.
+This repository contains the analyses for the State of the AnVIL 2024 Poll and using the [OTTR website template](https://github.com/jhudsl/OTTR_Template_Website) renders a [website that provides an overview of the main results](https://hutchdatascience.org/AnVIL_Poll_2024/) for each section of the poll. That website also provides links to download the poll's questions and possible answers.
 
 ## Repository file structure
 

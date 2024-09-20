@@ -13,17 +13,18 @@ library(magrittr) #for %<>%
 library(grid) #for Grobs and unit()
 library(ggrepel) #for geom_text_repel()
 library(patchwork)
+library(ggVennDiagram)
 
 knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 ```
 
-# Supplemental Analyses
+# Supplemental Analyses and Graphs
 
-## Identify type of user
+## Identify type of user (supplemental)
 
-No supplemental analyses
+*No supplements at this time*
 
-## Demographics: Institutional Affiliation
+## Demographics: Institutional Affiliation (supplemental)
 
 ### Number of institutions represented in responses
 
@@ -236,7 +237,7 @@ combined_plot
 ggsave(here("plots/institutionalType_facetedUserType.png"), plot = combined_plot)
 ```
 
-## Demographics: Highest Degree Attained
+## Demographics: Highest Degree Attained (supplemental)
 
 <details><summary>Description of variable definitions and steps</summary>
 
@@ -278,17 +279,15 @@ ggsave(here("plots/degree_usertype.png"))
 
 ## Demographics: Kind of Work
 
-No supplemental analyses
+*No supplements at this time*
 
 ## Demographics: Consortia Affiliations
 
-No supplemental analyses
+*No supplements at this time*
 
-## Experience: Genomics and Clinical Research Experience
+## Experience: Genomics and Clinical Research Experience (supplemental)
 
-### Plot data
-
-<details><summary>Should we split current users vs potential users?</summary>
+### Should we split current users vs potential users?
 
 Here we use two different plots to show that the distribution of experience level among these three research types is similar when comparing the distribution of current users vs potential users. In this first plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by research type. We stack the user type responses using `facet_wrap` and `nrow=2` as an argument within that. We use a `position="dodge"` to cluster the similar research type bars next to each other. And we use geom_text to label the bars with the actual count. This requires `group = researchType` within the `geom_text()` `aes()` and `position = position_dodge(width = 0.9)` within the general `geom_text()` function. 
 
@@ -337,9 +336,60 @@ ggsave(here("plots/researchExperienceLevel_colorExperience.png"))
 
 Both of these give us confidence that current and potential user counts for reported experience level in these research areas show similar distributions. So we'll go ahead and plot it without splitting out `UserType`.
 
-</details>
+### Overlap in experience levels for moderate or extreme experience categories for respondents
 
-#### Preferred bar plot
+```{r}
+resultsTidy %>% 
+  select(Timestamp, HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
+  pivot_longer(c(HumanGenomicExperience, 
+                 HumanClinicalExperience, 
+                 NonHumanGenomicExperience), 
+               names_to = "researchType", 
+               values_to = "experienceLevel") %>%
+  mutate(experienceLevel = 
+           factor(experienceLevel, 
+                  levels = c("Not at all experienced", 
+                             "Slightly experienced", 
+                             "Somewhat experienced", 
+                             "Moderately experienced", 
+                             "Extremely experienced")),
+         researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical\nResearch",
+                                  researchType == "HumanGenomicExperience" ~ "Human Genomic\nResearch",
+                                  researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research"),
+         Timestamp = factor(Timestamp)) %>%
+  ggplot(aes(y = factor(experienceLevel,
+                        levels = rev(c("Not at all experienced", 
+                                       "Slightly experienced", 
+                                       "Somewhat experienced", 
+                                       "Moderately experienced", 
+                                       "Extremely experienced"))), 
+             x = Timestamp, 
+             fill = experienceLevel)) +
+  geom_tile() +
+  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
+  theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(),
+        legend.position = "left") +
+  ylab("") +
+  ggtitle("How much experience do you have analyzing\nthe following data categories?") +
+  xlab("Respondent") +
+  facet_wrap(~researchType, nrow=3, strip.position="right")
+```
+
+```{r}
+inputList <- list(ClinicalExperience = which(resultsTidy$clinicalFlag),
+                  HumanGenomicsExperience = which(resultsTidy$humanGenomicFlag),
+                  NonHumanGenomicsExperience = which(resultsTidy$nonHumanGenomicFlag))
+
+ggVennDiagram(inputList, 
+              category.names = c("Clinical\nExperience", "Human Genomics\nExperience", " Non-human Genomics Experience")) +
+  scale_x_continuous(expand = expansion(mult = .2))
+```
+
+### Alternate plot
 
 <details><summary>Description of variable definitions and steps</summary>
 
@@ -372,9 +422,9 @@ ggsave(here("plots/researchExperienceLevel_noColor_noUserTypeSplit.png"))
 
 ## Experience: Controlled Access Datasets
 
-No Supplemental Analyses
+*No supplements at this time*
 
-## Experience: Tool & Resource Knowledge/Comfort level
+## Experience: Tool & Resource Knowledge/Comfort level (supplemental)
 
 ```{r}
 
@@ -465,7 +515,7 @@ ggsave(here("plots/dataresources_comfortscore.png"))
 
 
 
-## Preferences: Feature Importance Ranking
+## Preferences: Feature importance for current vs potential users (supplemental)
 
 ### Numerical response bias
 
@@ -568,7 +618,6 @@ ggplot(densitydf, aes(x=value, group = Feature, fill = Feature)) +
   theme(plot.margin = margin(1,1,1.25,1, "cm"))
 ggsave(here("plots/densityplot_rankfeatures.png"))
 ```
-
 
 #### Density plot with facets for feature
 
@@ -678,110 +727,102 @@ ggplot(countdf, aes(fill=rank, y=Feature, x=n)) +
 ggsave(here("plots/stackedbarplot_rankfeatures.png"))
 ```
 
-
-## Types of Data respondents would want to analyze on the AnVIL
-
-<details><summary>Question and possible answers</summary>
-
->What types of data do you or would you analyze using the AnVIL?
-
-Possible answers include
-
-* Genomes/exomes
-* Transcriptomes
-* Metagenomes
-* Proteomes
-* Metabolomes
-* Epigenomes
-* Structural
-* Single Cell
-* Imaging
-* Phenotypic
-* Electronic Health Record
-* Metadata
-* Survey
-* Other (with free text response)
-
-</details>
-
-<details><summary>Description of variable definitions and steps</summary>
-
-Because the responses for this data are going to look very similar to the controlled access dataset question (above), we'll follow similar reasoning here in how we prepare and plot the data.
-
-</details>
-
-### Prepare the data
+### Plot y-axis ordered by potential user ratings
 
 ```{r}
-prep_df_typeData <- function(subset_df){
-  subset_df %<>% separate(TypesOfData, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN", "WhichO"), sep = ", ", fill="right") %>%
-  pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichTypeData") %>%
-  drop_na(whichTypeData) %>%
-  group_by(whichTypeData) %>% summarize(count = n()) %>%
-  mutate(whichTypeData =
-           recode(whichTypeData,
-                  "I don't analyze data on AnVIL" = NA_character_,
-                  "I store data in AnVIL. I don’t analyze it." = NA_character_,
-                  "Used in training for analysis of genomes (variant calling)" = "Variant Calling"
-                  )
-         ) %>%
-  drop_na(whichTypeData)
-  return(subset_df)
-}
+
+# Provide a list of AnVIL only Tools
+AnVIL_only <-
+  setdiff(toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Current Users" &
+                                toPlotToolKnowledgeSeparateBR$AnVILorNo == "On the AnVIL", ]$Tool,
+          toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Potential Users", ]$Tool)
+
+# Order dummy column based only on Potential users
+toPlotToolKnowledgeSeparateBR <-
+  toPlotToolKnowledgeSeparateBR %>% mutate(ToolOrder = case_when(
+    UserType == "Potential Users" | Tool %in% AnVIL_only ~ avgScore,
+    TRUE ~ 0
+  ))
+
+
+PlotToolKnowledge_potential_user_score <-
+  ggplot(data = toPlotToolKnowledgeSeparateBR) +
+  geom_point(data = toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Potential Users" | toPlotToolKnowledgeSeparateBR$Tool %in% AnVIL_only ,],
+             aes(color = UserType, shape = AnVILorNo, y = reorder(Tool, ToolOrder), x = avgScore)) +
+  geom_point(data = toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Current Users",],
+             aes(color = UserType, shape = AnVILorNo, y = Tool, x = avgScore))
+
+PlotToolKnowledge_customization(PlotToolKnowledge_potential_user_score)
+ggsave(here("plots/tooldataresourcecomfortscore_singlepanel_by_potential_users.png"), w = 2200, h = 1350, units = "px")
+```
+
+### simpler plots focusing on a subset of the data
+
+```{r}
+#only separate from the AnVIL data
+
+simplerPlot <- toPlotToolKnowledge %>%
+  filter(AnVILorNo == "Separate from the AnVIL") %>% 
+  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(aes(color = UserType)) + 
+  geom_line() + 
+  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Tool or Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) + 
+  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-1,ymax=-1) + 
+  annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-1,ymax=-1) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm"))+
+  ggtitle("How would you rate your knowledge of or\ncomfort with these technologies\n(separate from the AnVIL)?") +
+  theme(legend.title = element_blank())
+
+simplerPlot
+
+ggsave(here("plots/toolsSeparateFromAnVIL_comfortscore.png"), plot = simplerPlot)
 ```
 
 ```{r}
-typeOfDataDf <- resultsTidy %>% prep_df_typeData()
+#add in purple points of comparison for On the AnVIL
 
-typeDataClinicalSubset <- resultsTidy %>%
-  filter(clinicalFlag == TRUE) %>%
-  prep_df_typeData()
+toPlot_simplified <- toPlotToolKnowledge %>%
+  filter(AnVILorNo == "Separate from the AnVIL")
 
-typeDataHumanGenomicSubset <- resultsTidy %>%
-  filter(humanGenomicFlag == TRUE) %>%
-  prep_df_typeData()
+onAnVIL <- toPlotToolKnowledge %>%
+  filter(AnVILorNo == "On the AnVIL") %>%
+  right_join(., toPlot_simplified,by = "Tool") %>%
+  bind_rows(., 
+            data.frame(Tool = "RStudio", 
+                       avgScore.x = toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),"avgScore"],
+                       UserType.x = "Current Users",
+                       AnVILorNo.x = "On the AnVIL"),
+            data.frame(Tool = "Bioconductor", 
+                       avgScore.x = toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),"avgScore"],
+                       UserType.x = "Current Users",
+                       AnVILorNo.x = "On the AnVIL")
+            ) %>% drop_na(avgScore.x)
 ```
 
-### Plot the data
 
 ```{r}
+simplerPlot + geom_point(data = onAnVIL, aes(x=avgScore.x,y=Tool,colour="#C77CFF")) + 
+  scale_color_manual( 
+    values = c("#F8766D", "#00BFC4", "#C77CFF"), labels = c("Potential Users", "Current Users", "Current User Ratings\nfor related AnVIL tools")) + theme(legend.title = element_blank())
 
-plot_type_data <- function(inputToPlotDF, subtitle = NULL){
-  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count), y = count)) +
-    geom_bar(stat="identity") + 
-    theme_classic() + theme(panel.background = element_blank(), panel.grid = element_blank()) +
-    theme(axis.text.x = element_text(angle=45, hjust=1)) +
-    xlab("Types of data") + ylab("Count") + 
-    ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) +
-    geom_text(aes(label = after_stat(y), group = whichTypeData), 
-                  stat = 'summary', fun = sum, vjust = -1, size=2) +
-    coord_cartesian(clip = "off")
-  return(toreturnplot)
-}
-```
-
-```{r}
-everyone_type_data <- plot_type_data(typeOfDataDf)
-
-everyone_type_data
-
-ggsave(here("plots/typesOfData.png"), plot=everyone_type_data)
+ggsave(here("plots/tools_comfortscore.png"))
 ```
 
 ```{r}
-clinical_type_data <- plot_type_data(typeDataClinicalSubset, subtitle = "Respondents moderately or extremely experienced with clinical data")
+#only the data resources
 
-clinical_type_data
+toPlotToolKnowledge %>%
+  filter(Tool == "DUOS" | Tool == "Access controlled access data" | Tool == "TDR" | Tool == "Terra Workspaces") %>%
+  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(colour = "#F8766D") + 
+  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Data Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) + 
+  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-0.35,ymax=-0.35) + 
+  annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-0.35,ymax=-0.35) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm"))+
+  ggtitle("How would you rate your knowledge of or\ncomfort with these AnVIL data features?") +
+  theme(legend.title = element_blank())
 
-ggsave(here("plots/typesOfData_clinical.png"), plot=clinical_type_data)
-```
-
-```{r}
-humangenomic_type_data <- plot_type_data(typeDataHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with human genomic data")
-
-humangenomic_type_data
-
-ggsave(here("plots/typesOfData_humangenomic.png"), plot=humangenomic_type_data)
+ggsave(here("plots/dataresources_comfortscore.png"))
 ```
 
 ## Source of funds for cloud computing

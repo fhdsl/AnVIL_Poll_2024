@@ -184,7 +184,7 @@ Here we select the columns containing answers for each data category: `HumanGeno
 experienceDf <- resultsTidy %>% select(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
   pivot_longer(c(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience), names_to = "researchType", values_to = "experienceLevel") %>%
   mutate(experienceLevel =
-                                                                                                                                                          factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
+           factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
          researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical Research",
                                   researchType == "HumanGenomicExperience" ~ "Human Genomic Research",
                                   researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research")) %>%
@@ -376,6 +376,80 @@ nonHumanGenomicDataPlot
 ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGenomicDataPlot) #add plot size
 ```
 
+## Experience: Types of Data Analyzed
+
+<details><summary>Question and possible answers</summary>
+
+>What types of data do you or would you analyze using the AnVIL?
+
+Possible answers include
+
+* Genomes/exomes
+* Transcriptomes
+* Metagenomes
+* Proteomes
+* Metabolomes
+* Epigenomes
+* Structural
+* Single Cell
+* Imaging
+* Phenotypic
+* Electronic Health Record
+* Metadata
+* Survey
+* Other (with free text response)
+
+</details>
+
+**Takeaway:**
+
+### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data </summary>
+
+</details>
+
+```{r, message=FALSE, echo = FALSE}
+typeOfDataDf <- resultsTidy %>% prep_df_typeData()
+
+typeDataClinicalSubset <- resultsTidy %>%
+  filter(clinicalFlag == TRUE) %>%
+  prep_df_typeData()
+
+typeDataHumanGenomicSubset <- resultsTidy %>%
+  filter(humanGenomicFlag == TRUE) %>%
+  prep_df_typeData()
+```
+
+<details><summary>Description of variable definitions and steps for plotting the bar graphs</summary>
+
+</details>
+
+```{r, message=FALSE, echo = FALSE}
+everyone_type_data <- plot_type_data(typeOfDataDf)
+
+everyone_type_data
+
+ggsave(here("plots/typesOfData.png"), plot=everyone_type_data) #add plot size
+```
+
+```{r, message=FALSE, echo = FALSE}
+clinical_type_data <- plot_type_data(typeDataClinicalSubset, subtitle = "Respondents moderately or extremely experienced with clinical data")
+
+clinical_type_data
+
+ggsave(here("plots/typesOfData_clinical.png"), plot=clinical_type_data)
+```
+
+```{r, message=FALSE, echo = FALSE}
+humangenomic_type_data <- plot_type_data(typeDataHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with human genomic data")
+
+humangenomic_type_data
+
+ggsave(here("plots/typesOfData_humangenomic.png"), plot=humangenomic_type_data)
+```
+
+
 ## Experience: Tool & Resource Knowledge/Comfort level
 
 **Takeaway:** Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users report similar comfort levels.
@@ -466,8 +540,8 @@ PlotToolKnowledge_avg_score <-
   geom_point(aes(color = UserType, shape = AnVILorNo))
 
 
-PlotToolKnowledge_customization(PlotToolKnowledge_avg_score) +
-  theme(legend.title = element_blank())
+PlotToolKnowledge_customization(PlotToolKnowledge_avg_score)
+
 ggsave(here("plots/tooldataresourcecomfortscore_singlepanel.png"), w = 2200, h = 1350, units = "px")
 ```
 
@@ -568,6 +642,23 @@ stylize_bar(forumPlot) +
 ## Preferences: Feature Importance Ranking
 
 **Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+
+<details><summary>Question and possible answers</summary>
+
+>Rank the following features or resources according to their importance for your continued use of the AnVIL
+
+>Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
+  
+* Easy billing setup
+* Flat-rate billing rather than use-based
+* Free version with limited compute or storage
+* On demand support and documentation
+* Specific tools or datasets are available/supported
+* Greater adoption of the AnVIL by the scientific community
+
+We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
+
+</details>
 
 <details><summary>Question and possible answers</summary>
 

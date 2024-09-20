@@ -6,11 +6,8 @@ output: html_document
 ---
 
 ```{r}
-library(tidyverse)
 library(dplyr)
-library(data.table)
 library(magrittr)
-library(here)
 ```
 
 ```{r}

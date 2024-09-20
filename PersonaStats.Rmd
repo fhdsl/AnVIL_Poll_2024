@@ -11,7 +11,7 @@ library(magrittr)
 ```
 
 ```{r}
-resultsTidy <- readRDS(here("data/resultsTidy.rds"))
+source(knitr::purl("TidyData.Rmd", quiet=TRUE)) # Intended for interactive analysis
 ```
 
 ```{r}

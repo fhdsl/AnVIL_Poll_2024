@@ -8,13 +8,10 @@ output: html_document
 
 ```{r message=FALSE, results='hide', warning=FALSE}
 library(here)
-library(tidyverse)
-library(magrittr)
 library(grid) #for Grobs
 library(scales)
 
-#knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
-resultsTidy <- readRDS(here("data/resultsTidy.rds"))
+knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
 source(here("resources/scripts/shared_functions.R"))
 ```
 
@@ -848,35 +845,11 @@ gdumbbell <- ggplot(totalRanksdf,
   ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL")
 
 
-stylize_dumbbell(gdumbbell, xmax=6, importance = TRUE)
-
-gdumbbell <- ggplot(totalRanksdf, aes(x = avgRank, y = reorder(Feature, -avgRank))) +
-  geom_line() +
-  geom_point(aes(color = Usertype), size = 3) +
-  theme(panel.background = element_blank()) + theme_bw() + theme(legend.position = "bottom") +
-  xlab("Average Rank") +
-  ylab("Feature") +
-  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL") +
-  scale_color_manual(values = c("#E0DD10", "#035C94")) +
-  theme(legend.title = element_blank())
-
-gdumbbell <- gdumbbell +
-  scale_x_continuous(breaks = 1:6, labels = 1:6, limits = c(1,6))+
-  annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.5,ymax=-0.5) +
-  annotation_custom(textGrob("Least\nimportant", gp=gpar(fontsize=8, fontface= "bold")),xmin=6,xmax=6,ymin=-0.5,ymax=-0.5) +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm"))
-
-ggsave(here("plots/dumbbellplot_xlim16_rankfeatures.png"), plot = gdumbbell)
-
-gdumbbell <- gdumbbell +
- scale_x_reverse(limits = c(6,1), breaks = 6:1, labels = 6:1) +
- annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
- annotation_custom(textGrob("Least\nimportant", gp=gpar(fontsize=8, fontface= "bold")),xmin=-6,xmax=-6,ymin=-0.5,ymax=-0.5)
+gdumbbell %<>% stylize_dumbbell(xmax=6, importance = TRUE)
 
 gdumbbell
 
-ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbbell)
+ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbbell) #set plot size
 
 ```
 
@@ -954,7 +927,7 @@ tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingTy
   coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.1, "cm"))
 
-tdumbbellå
+tdumbbell
 
 ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot = tdumbbell) #set plot size
 ```

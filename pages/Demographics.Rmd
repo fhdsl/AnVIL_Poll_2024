@@ -129,30 +129,6 @@ Most of the individuals using the AnVIL report being affiliated with a research 
 
   - Does industry not being represented in this sample of current users generalize to the larger AnVIL user base? If so, why?
 
-### Related Plots
-
-```{r, message = FALSE, echo = FALSE}
-instPlotB <- resultsTidy %>%
-  select(c(UserType, InstitutionalType)) %>%
-  group_by(UserType, InstitutionalType) %>% 
-  summarize(InstitutionalCount = n()) %>%
-  ggplot(aes(
-    y = reorder(InstitutionalType, InstitutionalCount, sum),
-    x = InstitutionalCount,
-    fill = UserType
-  )) + 
-  geom_bar(position = "stack", stat = "identity") +
-  geom_text(
-    aes(label = after_stat(x), group = InstitutionalType),
-    stat = 'summary', fun = sum, hjust = -1, size=2
-            ) +
-  annotation_custom(textGrob(paste("There are\n", length(unique(resultsTidy$InstitutionalAffiliation))  ,"\nunique institutions"), gp=gpar(fontsize=8, fontface = "bold")),xmin=34,xmax=34,ymin=2.5,ymax=2.5) +
-  coord_cartesian(clip = "off") +
-  ggtitle("What institution are you affiliated with?")
-
-stylize_bar(instPlotB)
-```
-
 <br>
 
 # Consortia Affiliations

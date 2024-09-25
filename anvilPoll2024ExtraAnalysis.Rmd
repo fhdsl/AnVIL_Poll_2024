@@ -8,9 +8,6 @@ output: html_document
 
 ```{r results='hide', warning=FALSE, message=FALSE}
 library(here)
-library(tidyverse)
-library(magrittr) #for %<>%
-library(grid) #for Grobs and unit()
 library(ggrepel) #for geom_text_repel()
 library(patchwork)
 library(ggVennDiagram)
@@ -20,9 +17,55 @@ knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 
 # Supplemental Analyses and Graphs
 
-## Identify type of user (supplemental)
+## Identify User Type (supplemental)
 
 *No supplements at this time*
+
+
+## Demographics: Highest Degree (supplemental)
+
+<details><summary>Description of variable definitions and steps</summary>
+
+First we select the columns of interest from `resultsTidy`: `Degrees` and `UserType`. Then we use `group_by` in conjunction with `summarize( = n())` to add counts for how many of each combo are observed in the data. 
+
+Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (current or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
+
+Used [this Stack Overflow post to label sums above the bars](https://stackoverflow.com/questions/30656846/draw-the-sum-value-above-the-stacked-bar-in-ggplot2)
+
+and used [this Stack Overflow post to remove NA from the legend](https://stackoverflow.com/questions/45493163/ggplot-remove-na-factor-level-in-legend)
+
+The rest of the changes are related to theme and labels and making sure that the numerical bar labels aren't cut off on the top.
+
+</details>
+
+```{r}
+resultsTidy %>%
+  group_by(Degrees, UserType) %>% 
+  summarize(n = n()) %>%
+  ggplot(aes(x = reorder(Degrees, -n, sum), 
+             y = n, 
+             fill = UserType
+             )) +
+      geom_bar(position = "stack", stat="identity") +
+      geom_text(
+                  aes(label = after_stat(y), group = Degrees), 
+                  stat = 'summary', fun = sum, vjust = -1, size=2
+                ) +
+      theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust=1)) +
+      xlab("Degree") +
+      ylab("Count") +
+      coord_cartesian(clip = "off") +
+      scale_fill_manual(values = c("#E0DD10", "#035C94"), na.translate = F) +
+      ggtitle("What is the highest degree you have attained?") +
+  theme(legend.title = element_blank())
+
+ggsave(here("plots/degree_usertype.png")) #set plot size
+```
+
+## Demographics: Kind of Work (supplemental)
+
+*No supplements at this time*
+
 
 ## Demographics: Institutional Affiliation (supplemental)
 
@@ -237,190 +280,9 @@ combined_plot
 ggsave(here("plots/institutionalType_facetedUserType.png"), plot = combined_plot)
 ```
 
-## Demographics: Highest Degree Attained (supplemental)
 
-<details><summary>Description of variable definitions and steps</summary>
 
-First we select the columns of interest from `resultsTidy`: `Degrees` and `UserType`. Then we use `group_by` in conjunction with `summarize( = n())` to add counts for how many of each combo are observed in the data. 
-
-Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (current or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
-
-Used [this Stack Overflow post to label sums above the bars](https://stackoverflow.com/questions/30656846/draw-the-sum-value-above-the-stacked-bar-in-ggplot2)
-
-and used [this Stack Overflow post to remove NA from the legend](https://stackoverflow.com/questions/45493163/ggplot-remove-na-factor-level-in-legend)
-
-The rest of the changes are related to theme and labels and making sure that the numerical bar labels aren't cut off on the top.
-
-</details>
-
-```{r}
-resultsTidy %>%
-  group_by(Degrees, UserType) %>% 
-  summarize(n = n()) %>%
-  ggplot(aes(x = reorder(Degrees, -n, sum), 
-             y = n, 
-             fill = UserType
-             )) +
-      geom_bar(position = "stack", stat="identity") +
-      geom_text(
-                  aes(label = after_stat(y), group = Degrees), 
-                  stat = 'summary', fun = sum, vjust = -1, size=2
-                ) +
-      theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust=1)) +
-      xlab("Degree") +
-      ylab("Count") +
-      coord_cartesian(clip = "off") +
-      scale_fill_manual(values = c("#E0DD10", "#035C94"), na.translate = F) +
-      ggtitle("What is the highest degree you have attained?") +
-  theme(legend.title = element_blank())
-
-ggsave(here("plots/degree_usertype.png"))
-```
-
-## Demographics: Kind of Work
-
-*No supplements at this time*
-
-## Demographics: Consortia Affiliations
-
-*No supplements at this time*
-
-## Experience: Genomics and Clinical Research Experience (supplemental)
-
-### Should we split current users vs potential users?
-
-Here we use two different plots to show that the distribution of experience level among these three research types is similar when comparing the distribution of current users vs potential users. In this first plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by research type. We stack the user type responses using `facet_wrap` and `nrow=2` as an argument within that. We use a `position="dodge"` to cluster the similar research type bars next to each other. And we use geom_text to label the bars with the actual count. This requires `group = researchType` within the `geom_text()` `aes()` and `position = position_dodge(width = 0.9)` within the general `geom_text()` function. 
-
-We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels and using a minimal theme to turn off borders, and then turning off grids, etc.
-
-```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=researchType)) + 
-  facet_wrap(~UserType, nrow=2) + 
-  geom_bar(stat="identity", position="dodge") + 
-  theme_minimal() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
-  geom_text(
-    aes(label = n, group = researchType), 
-    size=2, position = position_dodge(width = .9), vjust=-0.5
-) + 
-  ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off")
-  
-
-ggsave(here("plots/researchExperienceLevel_colorResearchType.png"))
-```
-
-In this second plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by experience level. We stack the user type responses and separate out the research types into separate facets using `facet_grid`. And we use geom_text to label the bars with the actual count. This uses `group = experienceLevel` within the `geom_text()` `aes()`. 
-
-We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels, expanding the left plot margin, and using a minimal theme to turn off borders, and then turning off grids, etc.
-
-```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=experienceLevel)) + 
-  facet_grid(UserType~researchType) + 
-  geom_bar(stat="identity") + 
-  theme_classic() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
-  geom_text(
-    aes(label = n, group = experienceLevel), vjust = -1, size=2
-) + 
-  ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") + 
-  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
-  theme(legend.position = "none")
-  
-
-ggsave(here("plots/researchExperienceLevel_colorExperience.png"))
-```
-
-Both of these give us confidence that current and potential user counts for reported experience level in these research areas show similar distributions. So we'll go ahead and plot it without splitting out `UserType`.
-
-### Overlap in experience levels for moderate or extreme experience categories for respondents
-
-```{r}
-resultsTidy %>% 
-  select(Timestamp, HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
-  pivot_longer(c(HumanGenomicExperience, 
-                 HumanClinicalExperience, 
-                 NonHumanGenomicExperience), 
-               names_to = "researchType", 
-               values_to = "experienceLevel") %>%
-  mutate(experienceLevel = 
-           factor(experienceLevel, 
-                  levels = c("Not at all experienced", 
-                             "Slightly experienced", 
-                             "Somewhat experienced", 
-                             "Moderately experienced", 
-                             "Extremely experienced")),
-         researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical\nResearch",
-                                  researchType == "HumanGenomicExperience" ~ "Human Genomic\nResearch",
-                                  researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research"),
-         Timestamp = factor(Timestamp)) %>%
-  ggplot(aes(y = factor(experienceLevel,
-                        levels = rev(c("Not at all experienced", 
-                                       "Slightly experienced", 
-                                       "Somewhat experienced", 
-                                       "Moderately experienced", 
-                                       "Extremely experienced"))), 
-             x = Timestamp, 
-             fill = experienceLevel)) +
-  geom_tile() +
-  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
-  theme_bw() +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
-        axis.text.y = element_blank(), 
-        axis.ticks.y = element_blank(),
-        legend.position = "left") +
-  ylab("") +
-  ggtitle("How much experience do you have analyzing\nthe following data categories?") +
-  xlab("Respondent") +
-  facet_wrap(~researchType, nrow=3, strip.position="right")
-```
-
-```{r}
-inputList <- list(ClinicalExperience = which(resultsTidy$clinicalFlag),
-                  HumanGenomicsExperience = which(resultsTidy$humanGenomicFlag),
-                  NonHumanGenomicsExperience = which(resultsTidy$nonHumanGenomicFlag))
-
-ggVennDiagram(inputList, 
-              category.names = c("Clinical\nExperience", "Human Genomics\nExperience", " Non-human Genomics Experience")) +
-  scale_x_continuous(expand = expansion(mult = .2))
-```
-
-### Alternate plot
-
-<details><summary>Description of variable definitions and steps</summary>
-
-This bar plot is the same as in the main analysis, but it doesn't use a fill for experience level. It has the experience level on the x-axis, the count on the y-axis. We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like UserType that we're not visualizing here. 
-
-We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off. 
-
-</details>
-
-```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n)) + 
-  facet_grid(~researchType) + 
-  geom_bar(stat="identity") + 
-  theme_bw() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
-  geom_text(
-    aes(label = after_stat(y), group = experienceLevel), 
-    stat = 'summary', fun = sum, vjust = -0.5, size=2
-) + 
-  ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") + 
-  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
-  theme(legend.position = "none")+
-  ggtitle("How much experience do you have analyzing the following data categories?")
-  
-
-ggsave(here("plots/researchExperienceLevel_noColor_noUserTypeSplit.png"))
-```
-
-## Experience: Controlled Access Datasets
+## Demographics: Consortia Affiliations (supplemental)
 
 *No supplements at this time*
 
@@ -515,7 +377,281 @@ ggsave(here("plots/dataresources_comfortscore.png"))
 
 
 
-## Preferences: Feature importance for current vs potential users (supplemental)
+## Experience: Types of data analyzed (supplemental)
+
+*No supplements at this time*
+
+## Experience: Genomics and Clinical Research Experience (supplemental)
+
+### Should we split current users vs potential users?
+
+Here we use two different plots to show that the distribution of experience level among these three research types is similar when comparing the distribution of current users vs potential users. In this first plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by research type. We stack the user type responses using `facet_wrap` and `nrow=2` as an argument within that. We use a `position="dodge"` to cluster the similar research type bars next to each other. And we use geom_text to label the bars with the actual count. This requires `group = researchType` within the `geom_text()` `aes()` and `position = position_dodge(width = 0.9)` within the general `geom_text()` function. 
+
+We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels and using a minimal theme to turn off borders, and then turning off grids, etc.
+
+```{r}
+ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=researchType)) + 
+  facet_wrap(~UserType, nrow=2) + 
+  geom_bar(stat="identity", position="dodge") + 
+  theme_minimal() + 
+  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  geom_text(
+    aes(label = n, group = researchType), 
+    size=2, position = position_dodge(width = .9), vjust=-0.5
+) + 
+  ylab("Count") + xlab ("Reported Experience Level") +
+  coord_cartesian(clip = "off")
+  
+
+ggsave(here("plots/researchExperienceLevel_colorResearchType.png"))
+```
+
+In this second plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by experience level. We stack the user type responses and separate out the research types into separate facets using `facet_grid`. And we use geom_text to label the bars with the actual count. This uses `group = experienceLevel` within the `geom_text()` `aes()`. 
+
+We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels, expanding the left plot margin, and using a minimal theme to turn off borders, and then turning off grids, etc.
+
+```{r}
+ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=experienceLevel)) + 
+  facet_grid(UserType~researchType) + 
+  geom_bar(stat="identity") + 
+  theme_classic() + 
+  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  geom_text(
+    aes(label = n, group = experienceLevel), vjust = -1, size=2
+) + 
+  ylab("Count") + xlab ("Reported Experience Level") +
+  coord_cartesian(clip = "off") + 
+  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
+  theme(legend.position = "none")
+  
+
+ggsave(here("plots/researchExperienceLevel_colorExperience.png"))
+```
+
+Both of these give us confidence that current and potential user counts for reported experience level in these research areas show similar distributions. So we'll go ahead and plot it without splitting out `UserType`.
+
+### Alternate plot
+
+<details><summary>Description of variable definitions and steps</summary>
+
+This bar plot is the same as in the main analysis, but it doesn't use a fill for experience level. It has the experience level on the x-axis, the count on the y-axis. We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like UserType that we're not visualizing here. 
+
+We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off. 
+
+</details>
+
+```{r}
+ggplot(experienceDf, aes(x=experienceLevel,y=n)) + 
+  facet_grid(~researchType) + 
+  geom_bar(stat="identity") + 
+  theme_bw() + 
+  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+  geom_text(
+    aes(label = after_stat(y), group = experienceLevel), 
+    stat = 'summary', fun = sum, vjust = -0.5, size=2
+) + 
+  ylab("Count") + xlab ("Reported Experience Level") +
+  coord_cartesian(clip = "off") + 
+  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
+  theme(legend.position = "none")+
+  ggtitle("How much experience do you have analyzing the following data categories?")
+  
+
+ggsave(here("plots/researchExperienceLevel_noColor_noUserTypeSplit.png"))
+```
+
+### Follow-up: Overlap in experience levels for moderate or extreme experience categories for respondents
+
+A potential follow-up question we had from examining the results of the "Experience: Genomics and Clinical Research Experience" section was "What's the overlap like for those moderately or extremely experienced in these various categories? The results of that question follow.
+
+```{r}
+resultsTidy %>% 
+  select(Timestamp, HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
+  pivot_longer(c(HumanGenomicExperience, 
+                 HumanClinicalExperience, 
+                 NonHumanGenomicExperience), 
+               names_to = "researchType", 
+               values_to = "experienceLevel") %>%
+  mutate(experienceLevel = 
+           factor(experienceLevel, 
+                  levels = c("Not at all experienced", 
+                             "Slightly experienced", 
+                             "Somewhat experienced", 
+                             "Moderately experienced", 
+                             "Extremely experienced")),
+         researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical\nResearch",
+                                  researchType == "HumanGenomicExperience" ~ "Human Genomic\nResearch",
+                                  researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research"),
+         Timestamp = factor(Timestamp)) %>%
+  ggplot(aes(y = factor(experienceLevel,
+                        levels = rev(c("Not at all experienced", 
+                                       "Slightly experienced", 
+                                       "Somewhat experienced", 
+                                       "Moderately experienced", 
+                                       "Extremely experienced"))), 
+             x = Timestamp, 
+             fill = experienceLevel)) +
+  geom_tile() +
+  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
+  theme_bw() +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y = element_blank(), 
+        axis.ticks.y = element_blank(),
+        legend.position = "left") +
+  ylab("") +
+  ggtitle("How much experience do you have analyzing\nthe following data categories?") +
+  xlab("Respondent") +
+  facet_wrap(~researchType, nrow=3, strip.position="right")
+```
+
+```{r}
+inputList <- list(ClinicalExperience = which(resultsTidy$clinicalFlag),
+                  HumanGenomicsExperience = which(resultsTidy$humanGenomicFlag),
+                  NonHumanGenomicsExperience = which(resultsTidy$nonHumanGenomicFlag))
+
+ggVennDiagram(inputList, 
+              category.names = c("Clinical\nExperience", "Human Genomics\nExperience", " Non-human Genomics Experience")) +
+  scale_x_continuous(expand = expansion(mult = .2))
+```
+
+## Experience: Controlled Access Datasets (supplemental)
+
+*No supplements at this time*
+
+
+## Awareness: Monthly AnVIL Demos (supplemental)
+
+### Utilization
+
+```{r}
+demoPlotUtil <- resultsTidy %>%
+  group_by(UserType, AnVILDemoUse) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=reorder(AnVILDemoUse, count),
+             x= count,
+             fill = UserType)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
+stylize_bar(demoPlotUtil)
+```  
+
+### Awareness or Utilization Color rather than y-axis split
+
+```{r}
+pd1 <- resultsTidy %>%
+  group_by(UserType, AnVILDemoUse) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=UserType,
+             x= count,
+             fill = AnVILDemoUse)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?") +
+  theme_classic() +
+  xlab("") +
+  ylab(" ") +
+  scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
+  scale_x_continuous(breaks= pretty_breaks()) +
+  theme(legend.title = element_blank())
+```
+
+```{r}
+pd2 <- resultsTidy %>%
+  group_by(UserType, AnVILDemoAwareness) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=UserType,
+             x=count,
+             fill = AnVILDemoAwareness)) +
+  geom_bar(stat = "identity") +
+  #ggtitle("Have you attended a monthly AnVIL Demo?") +
+  theme_classic() +
+  xlab("Count") + 
+  ylab(" ") +
+  scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
+  scale_x_continuous(breaks= pretty_breaks()) +
+  theme(legend.title = element_blank())
+
+```
+
+```{r}
+pd1 / pd2
+```
+
+## Awareness: AnVIL Support Forum (supplemental)
+
+```{r}
+forumdf %<>% mutate(,
+        forumUse = factor(
+          case_when(
+          forumInteractionDescription == "Posted in" ~ "Have utilized",
+          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
+          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
+          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
+          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
+        ), levels = c("Have not utilized", "Have utilized")))
+```
+
+### Utilization
+
+```{r}
+forumPlotUtil <- forumdf %>%
+  group_by(UserType, forumUse) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=reorder(forumUse, count),
+             x= count,
+             fill = UserType)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+
+stylize_bar(forumPlotUtil)
+```  
+
+### Awareness or Utilization Color rather than y-axis split
+
+```{r}
+pf1 <- forumdf %>%
+  group_by(UserType, forumUse) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=UserType,
+             x= count,
+             fill = forumUse)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
+  theme_classic() +
+  xlab("") +
+  ylab(" ") +
+  scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
+  scale_x_continuous(breaks= pretty_breaks()) +
+  theme(legend.title = element_blank(), )
+```
+
+```{r}
+pf2 <- forumdf %>%
+  group_by(UserType, forumAwareness) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y=UserType,
+             x=count,
+             fill = forumAwareness)) +
+  geom_bar(stat = "identity") +
+  #ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
+  theme_classic() +
+  xlab("Count") + 
+  ylab(" ") +
+  scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
+  scale_x_continuous(breaks= pretty_breaks()) +
+  theme(legend.title = element_blank())
+
+```
+
+```{r}
+pf1 / pf2
+```
+
+## Preferences: Feature Importance Ranking (supplemental)
 
 ### Numerical response bias
 
@@ -825,59 +961,21 @@ toPlotToolKnowledge %>%
 ggsave(here("plots/dataresources_comfortscore.png"))
 ```
 
-## Source of funds for cloud computing
+## Preferences: Training Workshop Modality Ranking (supplemental)
 
-> What source(s) of funds do you use to pay for cloud computing?
+*No supplements at this time*
 
-Possible answers include 
+## Preferences: Where analyses are currently run (supplemental)
 
-* NHGRI
-* Other NIH
-* Foundation Grant
-* Institutional funds
-* Don't know
-* Only use free options
-* Other (with free text entry if Other is selected)
+*No supplements at this time*
 
-The only Other response in this set of responses is NSF. 
+## Preferences: DMS compliance/data repositories (supplemental)
 
-Answers are stored in the `FundingSources` column. This question was a select all that apply, so answers will be comma separated, and this question was asked to all survey takers.
+*No supplements at this time*
 
-### Prepare the data
+## Preferences: Source for cloud computing funds (supplemental)
 
-<details><summary>Description of variable definitions and steps</summary>
-
-</details>
-
-```{r}
-toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG"), sep = ", ", fill="right") %>%
-  pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichFundingSource") %>%
-  drop_na(whichFundingSource) %>%
-  group_by(whichFundingSource, UserType) %>% summarize(count = n())
-```
-
-### Plot the data
-
-<details><summary>Description of variable definitions and steps</summary>
-
-</details>
-
-```{r}
-
-toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
-  geom_bar(position = "stack", stat = "identity") +
-  scale_fill_manual(values = c("#E0DD10", "#035C94")) +
-  theme_bw() +
-  ggtitle("What source(s) of funds do you use to pay for cloud computing?") +
-  xlab("Count") +
-  ylab("Funding Source") +
-  theme(panel.background = element_blank(),
-        panel.grid.minor.x = element_blank(), 
-        panel.grid.minor.y = element_blank(),
-        panel.grid.major.y = element_blank())
-
-ggsave(here("plots/fundingsources.png"))
-```
+### Alternate plot
 
 ```{r}
 toPlotFundingSource %>% 
@@ -904,220 +1002,17 @@ toPlotFundingSource %>%
 ggsave(here("plots/fundingsources_colorSource.png"))
 ```
 
-## Preference for training modality
+## Returning User: Length of Use of the AnVIL (supplemental)
 
->Please rank how/where you would prefer to attend AnVIL training workshops.
+*No supplements at this time*
 
-Possible answers include 
+## Returning User: Foreseeable Computational Needs (supplemental)
 
-* On-site at my institution: `AnVILTrainingWorkshopsOnSite`
-* Virtual: `AnVILTrainingWorkshopsVirtual`
-* Conference (e.g., CSHL, AMIA): `AnVILTrainingWorkshopsConference`
-* AnVIL-specific event: `AnVILTrainingWorkshopsSpecEvent`
-* Other: `AnVILTrainingWorkshopsOther`
+*No supplements at this time*
 
-The responses are stored in the starts with `AnVILTrainingWorkshops` columns
+## Returning User: Recommendation likelihood (supplemental)
 
-
-### Prepare the data
-
-```{r}
-
-resultsTidy %<>%
-  mutate(across(starts_with(
-    "AnVILTrainingWorkshops"), as.character)) %>%
-  unnest(starts_with("AnVILTrainingWorkshops"), keep_empty = TRUE) %>%
-  mutate(across(
-    starts_with("AnVILTrainingWorkshops"),
-    ~ recode(
-      .x,
-      "1 (Most preferred in this list)" = "1",
-      "5 (Least preferred in this list)" = "5",
-      "NULL" = NA_character_
-    )
-  )) %>%
-  mutate(across(starts_with("AnVILTrainingWorkshop"), as.integer))
-
-```
-
-```{r}
-toPlotTrainingRanks <- bind_rows(
-  resultsTidy %>%
-    filter(UserType == "Current User") %>%
-    select(starts_with("AnVILTrainingWorkshops")) %>%
-    colSums(na.rm = TRUE) %>%
-    as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
-    mutate(nranks = sum(resultsTidy$UserType == "Current User"),
-          avgRank = totalRank / nranks,
-          UserType = "Current Users") %>%
-  mutate(TrainingType = rownames(.)) %>%
-  mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", "")),
-  resultsTidy %>%
-    filter(UserType == "Potential User") %>%
-    select(starts_with("AnVILTrainingWorkshops")) %>%
-    colSums() %>%
-    as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
-    mutate(nranks = sum(resultsTidy$UserType == "Potential User"),
-           avgRank = totalRank / nranks,
-           UserType = "Potential Users") %>%
-    mutate(TrainingType = rownames(.)) %>%
-    mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", ""))
-  ) %>% mutate(TrainingType = recode(TrainingType, "SpecEvent" = "AnVIL-specific event", "OnSite" = "On-site at my institution", "Conference" = "Conference (e.g., CSHL, AMIA)")) %>%
-  mutate(UserType = factor(UserType, levels = c("Potential Users", "Current Users")))
-
-```
-
-### Plot the data
-
-```{r}
-tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingType, -avgRank))) +
-  geom_line() +
-  geom_point(aes(color = UserType), size = 3) +
-  theme(panel.background = element_blank()) + theme_bw() + theme(legend.position = "bottom") +
-  xlab("Average Rank") + 
-  ylab("Training Workshop Modality") + 
-  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.") +
-  scale_color_manual(values = c("#E0DD10", "#035C94")) +
-  theme(legend.title=element_blank())
-
-tdumbbell
-
-ggsave(here("plots/dumbbellplot_trainingmodalitypref.png"), plot = tdumbbell)
-
-tdumbbell <- tdumbbell + 
-  scale_x_continuous(breaks = 5:1, labels = 5:1, limits = c(1,5))+
-  annotation_custom(textGrob("Most\npreferred", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.5,ymax=-0.5) + 
-  annotation_custom(textGrob("Least\npreferred", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-0.5,ymax=-0.5) +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm"))
-  
-
-tdumbbell
-
-ggsave(here("plots/dumbbellplot_xlim15_trainingmodalitypref.png"), plot = tdumbbell)
-
-tdumbbell <- tdumbbell +
-  scale_x_reverse(limits = c(5,1)) +
-  annotation_custom(textGrob("Most\npreferred", gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) + 
-  annotation_custom(textGrob("Least\npreferred", gp=gpar(fontsize=8, fontface= "bold")),xmin=-5,xmax=-5,ymin=-0.5,ymax=-0.5)
-  
-tdumbbell
-
-ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot = tdumbbell)
-
-```
-
-## Awareness: AnVIL Demos
-
-### Utilization
-
-```{r}
-demoPlotUtil <- resultsTidy %>%
-  group_by(UserType, AnVILDemoUse) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=reorder(AnVILDemoUse, count),
-             x= count,
-             fill = UserType)) + 
-  geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?")
-
-stylize_bar(demoPlotUtil)
-```  
-
-### Awareness or Utilization Color rather than y-axis split
-
-```{r}
-resultsTidy %>%
-  group_by(UserType, AnVILDemoUse) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=UserType,
-             x= count,
-             fill = AnVILDemoUse)) + 
-  geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?") +
-  theme_classic() +
-  xlab("Count") +
-  ylab(" ") +
-  scale_fill_manual(values = c("#25445A", "#7EBAC0"))
-```
-
-```{r}
-resultsTidy %>%
-  group_by(UserType, AnVILDemoAwareness) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=UserType,
-             x=count,
-             fill = AnVILDemoAwareness)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?") +
-  theme_classic() +
-  xlab("Count") + 
-  ylab(" ") +
-  scale_fill_manual(values = c("#25445A", "#7EBAC0"))
-
-```
-
-## Awareness: AnVIL Support Forum
-
-```{r}
-forumdf %<>% mutate(,
-        forumUse = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Have utilized",
-          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
-          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
-          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
-          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
-        ), levels = c("Have not utilized", "Have utilized")))
-```
-
-### Utilization
-
-```{r}
-forumPlotUtil <- forumdf %>%
-  group_by(UserType, forumUse) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=reorder(forumUse, count),
-             x= count,
-             fill = UserType)) + 
-  geom_bar(stat = "identity") +
-  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
-
-stylize_bar(forumPlotUtil)
-```  
-
-### Awareness or Utilization Color rather than y-axis split
-
-```{r}
-forumdf %>%
-  group_by(UserType, forumUse) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=UserType,
-             x= count,
-             fill = forumUse)) + 
-  geom_bar(stat = "identity") +
-  ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
-  theme_classic() +
-  xlab("Count") +
-  ylab(" ") +
-  scale_fill_manual(values = c("#25445A", "#7EBAC0"))
-```
-
-```{r}
-forumdf %>%
-  group_by(UserType, forumAwareness) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(y=UserType,
-             x=count,
-             fill = forumAwareness)) +
-  geom_bar(stat = "identity") +
-  ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
-  theme_classic() +
-  xlab("Count") + 
-  ylab(" ") +
-  scale_fill_manual(values = c("#25445A", "#7EBAC0"))
-
-```
+*No supplements at this time*
 
 ## Session Info
 

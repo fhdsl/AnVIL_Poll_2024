@@ -8,7 +8,6 @@ output: html_document
 
 ```{r results='hide', warning=FALSE, message=FALSE}
 library(here)
-library(ggrepel) #for geom_text_repel()
 library(patchwork)
 library(ggVennDiagram)
 

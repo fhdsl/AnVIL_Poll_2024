@@ -101,7 +101,11 @@ Overall, there is less comfort with containers or workflows than using various p
 
 # Types of data analyzed
 
-TBA
+```{r, message=FALSE, echo=FALSE}
+typeOfDataDf <- resultsTidy %>% 
+  prep_df_typeData() %>%
+  plot_type_data(typeOfDataDf)
+```
 
 <br/>
 

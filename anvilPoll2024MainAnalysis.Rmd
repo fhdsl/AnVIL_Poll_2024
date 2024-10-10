@@ -220,6 +220,8 @@ consortiaTable <- resultsTidy %>%
 
 **Takeaway:** Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provide an affiliation, with `r nrow(consortiaTable)` unique affiliations represented across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
 
+### Prepare and display the data
+
 ```{r, message = FALSE, echo = FALSE}
 consortia_df <- 
   consortiaTable[which(consortiaTable$count >1),] %>% 
@@ -349,7 +351,7 @@ Possible answers include
 
 </details>
 
-**Takeaway:**
+**Takeaway:** 
 
 ### Prepare and plot the data
 
@@ -635,7 +637,9 @@ ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGen
 
 **Takeaway:** Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users.
 
-### Raw responses
+### Prepare and plot the data
+
+#### Raw responses
 
 ```{r}
 demoPlotRaw <- resultsTidy %>%
@@ -650,7 +654,7 @@ demoPlotRaw <- resultsTidy %>%
 stylize_bar(demoPlotRaw)
 ```  
 
-### Responses recoded to focus on awareness
+#### Responses recoded to focus on awareness
 
 ```{r}
 demoPlot <- resultsTidy %>% 
@@ -672,6 +676,8 @@ stylize_bar(demoPlot) +
 
 - We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. 
 - While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
+
+### Prepare and plot the data
 
 ```{r}
 forumdf <- resultsTidy %>% 
@@ -700,7 +706,7 @@ forumdf <- resultsTidy %>%
 )
 ```
 
-### Raw responses
+#### Raw responses
 
 ```{r}
 forumPlotRaw <- ggplot(forumdf,
@@ -713,7 +719,7 @@ forumPlotRaw <- ggplot(forumdf,
 stylize_bar(forumPlotRaw)
 ```
 
-### Responses recoded to focus on awareness
+#### Responses recoded to focus on awareness
 
 ```{r}
 forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) + 
@@ -727,23 +733,6 @@ stylize_bar(forumPlot) +
 ## Preferences: Feature Importance Ranking
 
 **Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
-
-<details><summary>Question and possible answers</summary>
-
->Rank the following features or resources according to their importance for your continued use of the AnVIL
-
->Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
-  
-* Easy billing setup
-* Flat-rate billing rather than use-based
-* Free version with limited compute or storage
-* On demand support and documentation
-* Specific tools or datasets are available/supported
-* Greater adoption of the AnVIL by the scientific community
-
-We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
-
-</details>
 
 <details><summary>Question and possible answers</summary>
 
@@ -939,7 +928,40 @@ ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot 
 - Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. 
 - We also see that potential users report using Galaxy (a free option) more than current users do. 
 
+### Prepare and plot the data
+
+```{r}
+whereRunPlot <- resultsTidy %>% 
+  separate(WhereAnalysesRun, 
+           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"), 
+           sep = ", ", fill = "right") %>% 
+  pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
+  mutate(wherePlatforms = 
+           recode(wherePlatforms, 
+                  "Amazon Web Services (AWS)" = "AWS", 
+                  "Galaxy (usegalaxy.org)" = "Galaxy", 
+                  "Galaxy Australia" = "Galaxy", 
+                  "Google Cloud Platform (GCP)" = "GCP", 
+                  "Institutional High Performance Computing cluster (HPC)" = "Institutional HPC", 
+                  "Personal computer (locally)," = "Personal computer (locally)",
+                  "local server" = "Institutional HPC")
+         ) %>% 
+  group_by(UserType, wherePlatforms) %>% 
+  summarize(count = n()) %>% 
+  drop_na() %>% 
+  ggplot(aes(x = count, 
+             y = reorder(wherePlatforms, count), 
+             fill = UserType)) +
+  geom_bar(stat="identity") + 
+  ggtitle("Where do you currently run analyses?")
+
+stylize_bar(whereRunPlot) +
+  ylab("Platform")
+```
+
 ## Preferences: DMS compliance/data repositories
+
+NEED TO FILL OUT
 
 ## Preferences: Source for cloud computing funds
 
@@ -1063,9 +1085,9 @@ recLikePlot <- resultsTidy %>%
   geom_bar(stat="identity") +
   ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
   coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
-  annotation_custom(textGrob("Extremely\nlikely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.25,ymax=-1.25) +
-  annotation_custom(textGrob("Not at all\nlikely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.25,ymax=-1.25) +
+  theme(plot.margin = margin(1,1,1.2,1, "cm")) +
+  annotation_custom(textGrob("Extremely likely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.2,ymax=-1.2) +
+  annotation_custom(textGrob("Not at all likely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.2,ymax=-1.2) +
   scale_y_continuous(breaks= pretty_breaks()) +
   geom_text(aes(label = count, group = RecommendationLikelihood),
                   vjust = -1, size=2)

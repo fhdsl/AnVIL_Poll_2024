@@ -92,9 +92,9 @@ recLikePlot <- resultsTidy %>%
   geom_bar(stat="identity") +
   ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
   coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
-  annotation_custom(textGrob("Extremely\nlikely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.25,ymax=-1.25) +
-  annotation_custom(textGrob("Not at all\nlikely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.25,ymax=-1.25) +
+  theme(plot.margin = margin(1,1,1.2,1, "cm")) +
+  annotation_custom(textGrob("Extremely likely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.25,ymax=-1.25) +
+  annotation_custom(textGrob("Not at all likely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.25,ymax=-1.25) +
   scale_y_continuous(breaks= pretty_breaks()) +
   geom_text(aes(label = count, group = RecommendationLikelihood),
                   vjust = -1, size=2)

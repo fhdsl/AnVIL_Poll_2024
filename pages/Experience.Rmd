@@ -102,9 +102,9 @@ Overall, there is less comfort with containers or workflows than using various p
 # Types of data analyzed
 
 ```{r, message=FALSE, echo=FALSE}
-typeOfDataDf <- resultsTidy %>% 
+resultsTidy %>% 
   prep_df_typeData() %>%
-  plot_type_data(typeOfDataDf)
+  plot_type_data()
 ```
 
 <br/>

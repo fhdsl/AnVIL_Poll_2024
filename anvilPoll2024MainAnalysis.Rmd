@@ -11,8 +11,7 @@ library(here)
 library(grid) #for Grobs
 library(scales)
 
-#knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
-resultsTidy <- readRDS(here("data/resultsTidy.rds"))
+knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
 source(here("resources/scripts/shared_functions.R"))
 ```
 

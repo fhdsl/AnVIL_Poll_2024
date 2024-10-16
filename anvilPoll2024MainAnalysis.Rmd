@@ -11,7 +11,8 @@ library(here)
 library(grid) #for Grobs
 library(scales)
 
-knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
+#knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
+resultsTidy <- readRDS(here("data/resultsTidy.rds"))
 source(here("resources/scripts/shared_functions.R"))
 ```
 
@@ -21,13 +22,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Main Analysis and Insights 
+# Main Analysis and Insights
 
 ## Identify User Type
 
 **Takeaway:** Of the ```r nrow(resultsTidy)``` responses, ```r nrow(resultsTidy %>% filter(UserType == "CurrentUser"))``` were current users and ```r nrow(resultsTidy %>% filter(UserType == "PotentialUser"))``` were potential users. The majority of current users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
 
-**Potential Follow-ups:** 
+**Potential Follow-ups:**
 
 - Look to see if those potential users who previously used to use the AnVIL show similarity in overall trends with the rest of the potential users
 - Directly ask why they no longer use the AnVIL (Elizabeth mentioned the possibility that the AnVIL is sometimes used in courses or workshops and students may not use it after that)
@@ -41,9 +42,9 @@ First, we group the data by the assigned UserType labels/categories and their re
 </details>
 
 ```{r}
-typeOfUserPlot <- resultsTidy %>% 
-  group_by(UserType, CurrentUsageDescription) %>% 
-  summarize(count = n()) %>% 
+typeOfUserPlot <- resultsTidy %>%
+  group_by(UserType, CurrentUsageDescription) %>%
+  summarize(count = n()) %>%
   mutate(CurrentUsageDescription = case_when(
     CurrentUsageDescription == "For ongoing projects (e.g., consistent project development and/or work)" ~ "For ongoing projects:\nconsistent project development\nand/or work",
     CurrentUsageDescription == "For completed/long-term projects (e.g., occasional updates/maintenance as needed)" ~ "For completed/long-term projects:\noccasional updates/maintenance\nas needed",
@@ -52,12 +53,12 @@ typeOfUserPlot <- resultsTidy %>%
     CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "I have never\nused the AnVIL",
     CurrentUsageDescription == "I have never heard of the AnVIL" ~ "I have never\nheard of the AnVIL"
   )) %>%
-  ggplot(aes(x = count, y = reorder(CurrentUsageDescription, count), fill = UserType)) + 
-  geom_bar(stat="identity", position ="stack") + 
+  ggplot(aes(x = count, y = reorder(CurrentUsageDescription, count), fill = UserType)) +
+  geom_bar(stat="identity", position ="stack") +
   ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
   geom_text(aes(label = count, group = CurrentUsageDescription),
                   hjust = -0.5, size=2)
-  
+
 typeOfUserPlot %<>% stylize_bar()
 
 typeOfUserPlot
@@ -115,7 +116,7 @@ ggsave(here("plots/degree_furthersimplified_usertype.png")) #set plot size
 
 **Potential Follow-ups:**
 
-- Use this information (togther with other info?) to try to cluster respondents/users into personas. 
+- Use this information (togther with other info?) to try to cluster respondents/users into personas.
 
 ### Prepare and plot the data
 
@@ -133,8 +134,8 @@ dfForPlotKOW <- resultsTidy %>%
   pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
   select(Timestamp, UserType, whichWorkDescription) %>%
   mutate(whichWorkDescription =
-           recode(whichWorkDescription, 
-                  "computational education" = "Computational education", 
+           recode(whichWorkDescription,
+                  "computational education" = "Computational education",
                   "Program administration," = "Program administration"),
          whichWorkDescription = factor(whichWorkDescription),
          Timestamp = factor(Timestamp)
@@ -143,7 +144,7 @@ dfForPlotKOW <- resultsTidy %>%
 
 factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
 
-kowPlot <- ggplot(dfForPlotKOW, 
+kowPlot <- ggplot(dfForPlotKOW,
        aes(x = Timestamp,
            y = factor(whichWorkDescription, levels = factorLevel),
            fill = whichWorkDescription
@@ -163,7 +164,7 @@ kowPlot
 #save and set save size
 ```
 
-## Demographics: Institutional Affiliation 
+## Demographics: Institutional Affiliation
 
 **Takeaway:**
 
@@ -185,7 +186,7 @@ instTypePlot <- resultsTidy %>%
     fill = UserType
   )) + geom_bar(position = "stack", stat = "identity") +
   geom_text(
-                  aes(label = after_stat(x), group = FurtherSimplifiedInstitutionalType), 
+                  aes(label = after_stat(x), group = FurtherSimplifiedInstitutionalType),
                   stat = 'summary', fun = sum, hjust = -1, size=2
                 ) +
   ggtitle("Institutional Affiliation for All Survey Respondents") +
@@ -223,8 +224,8 @@ consortiaTable <- resultsTidy %>%
 ### Prepare and display the data
 
 ```{r, message = FALSE, echo = FALSE}
-consortia_df <- 
-  consortiaTable[which(consortiaTable$count >1),] %>% 
+consortia_df <-
+  consortiaTable[which(consortiaTable$count >1),] %>%
   rename(`consortium` = whichConsortiumName)
 
 kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
@@ -320,7 +321,7 @@ PlotToolKnowledge_avg_score <-
   geom_point(aes(color = UserType, shape = AnVILorNo))
 
 
-PlotToolKnowledge_customization(PlotToolKnowledge_avg_score)
+PlotToolKnowledge_avg_score %<>% PlotToolKnowledge_customization()
 
 ggsave(here("plots/tooldataresourcecomfortscore_singlepanel.png"), w = 2200, h = 1350, units = "px")
 ```
@@ -351,7 +352,7 @@ Possible answers include
 
 </details>
 
-**Takeaway:** 
+**Takeaway:**
 
 ### Prepare and plot the data
 
@@ -482,10 +483,12 @@ ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")
 
 ## Experience: Controlled Access Datasets
 
-**Takeaway:** Over half of respondents report they are extremely interested in working with controlled access datasets.
+**Takeaway:** Generally, over half of respondents report they are extremely interested in working with controlled access datasets.
 
-- Of the survey provided choices, respondents have accessed or are particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted). 
-- 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga). 
+For specific controlled access datasets ...
+
+- Of the survey provided choices, respondents have accessed or are particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted).
+- 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga).
 - The trend of All of Us, UK Biobank, and GTEx being chosen the most is consistent across all 3 research categories (moderately or extremely experienced with clinical, human genomic, or non-human genomic data).
 
 <details><summary>Question and possible answers</summary>
@@ -512,6 +515,41 @@ Since this is a select all that apply question, we expect that there will be mul
 </details>
 
 ### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data</summary>
+
+</details>
+
+```{r}
+dataInterest <- resultsTidy %>%
+  group_by(InterestControlledData) %>%
+  summarize(count = n())
+```
+
+<details><summary>Description of variable definitions and steps for preparing bar plot</summary>
+
+</details>
+
+```{r}
+dataInterestPlot <- dataInterest %>%
+  ggplot(aes(x = InterestControlledData,
+             y = count,
+             fill = as.factor(InterestControlledData))) +
+  geom_bar(stat="identity") +
+  ggtitle("How interested are you in working with controlled access datasets?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  annotation_custom(textGrob("Extremely\ninterested", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-3.5,ymax=-3.5) +
+  annotation_custom(textGrob("Not at all\ninterested", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-3.5,ymax=-3.5) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = InterestControlledData),
+                vjust = -1, size=2)
+
+dataInterestPlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE) +
+  xlab("Interest level") +
+  ylab("Count") +
+  theme(legend.position = "none")
+```
 
 <details><summary>Description of variable definitions and steps for preparing the data</summary>
 
@@ -651,49 +689,49 @@ demoPlotRaw <- resultsTidy %>%
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
-stylize_bar(demoPlotRaw)
+demoPlotRaw %<>% stylize_bar()
 ```  
 
 #### Responses recoded to focus on awareness
 
 ```{r}
-demoPlot <- resultsTidy %>% 
+demoPlot <- resultsTidy %>%
   group_by(UserType, AnVILDemoAwareness) %>%
   summarize(count = n()) %>%
-  ggplot(aes(y = AnVILDemoAwareness, 
-             x = count, 
-             fill = UserType)) + 
+  ggplot(aes(y = AnVILDemoAwareness,
+             x = count,
+             fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
-stylize_bar(demoPlot) +
+demoPlot %<>% stylize_bar() +
   ylab("Awareness")
 ```
 
 ## Awareness: AnVIL Support Forum
 
-**Takeaway:** Most respondents have not used the AnVIL support forum. 
+**Takeaway:** Most respondents have not used the AnVIL support forum.
 
-- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. 
+- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users.
 - While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
 
 ### Prepare and plot the data
 
 ```{r}
-forumdf <- resultsTidy %>% 
-  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, 
-                                         pattern = "No, ", 
-                                         replacement= "No ")) %>% 
-  separate(AnVILSupportForum, 
-           c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
-           sep = ", ", 
-           fill = "right") %>% 
+forumdf <- resultsTidy %>%
+  mutate(AnVILSupportForum = str_replace(AnVILSupportForum,
+                                         pattern = "No, ",
+                                         replacement= "No ")) %>%
+  separate(AnVILSupportForum,
+           c("forumInteractionA", "forumInteractionB", "forumInteractionC"),
+           sep = ", ",
+           fill = "right") %>%
   pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
-  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>% 
-  summarize(count = n()) %>% 
-  drop_na() %>% 
-  mutate(forumInteractionDescription = 
-           factor(forumInteractionDescription, 
+  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  mutate(forumInteractionDescription =
+           factor(forumInteractionDescription,
                   levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
         forumAwareness = factor(
           case_when(
@@ -716,17 +754,17 @@ forumPlotRaw <- ggplot(forumdf,
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
-stylize_bar(forumPlotRaw)
+forumPlotRaw %<>% stylize_bar()
 ```
 
 #### Responses recoded to focus on awareness
 
 ```{r}
-forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) + 
+forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
-stylize_bar(forumPlot) +
+forumPlot %<>% stylize_bar() +
   ylab("Awareness")
 ```
 
@@ -739,7 +777,7 @@ stylize_bar(forumPlot) +
 >Rank the following features or resources according to their importance for your continued use of the AnVIL
 
 >Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
-  
+
 * Easy billing setup
 * Flat-rate billing rather than use-based
 * Free version with limited compute or storage
@@ -826,8 +864,8 @@ Finally, we'll reverse the x-axis so that most important is on the right and lea
 
 ```{r}
 
-gdumbbell <- ggplot(totalRanksdf, 
-                    aes(x = avgRank, 
+gdumbbell <- ggplot(totalRanksdf,
+                    aes(x = avgRank,
                         y = reorder(Feature, -avgRank))) +
   geom_line() +
   geom_point(aes(color = Usertype), size = 3) +
@@ -850,7 +888,7 @@ ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbb
 
 >Please rank how/where you would prefer to attend AnVIL training workshops.
 
-Possible answers include 
+Possible answers include
 
 * On-site at my institution: `AnVILTrainingWorkshopsOnSite`
 * Virtual: `AnVILTrainingWorkshopsVirtual`
@@ -923,39 +961,39 @@ ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot 
 
 ## Preferences: Where analyses are currently run
 
-**Takeaway:** Institutional HPC and locally/personal computers are the most common responses. 
+**Takeaway:** Institutional HPC and locally/personal computers are the most common responses.
 
-- Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. 
-- We also see that potential users report using Galaxy (a free option) more than current users do. 
+- Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample.
+- We also see that potential users report using Galaxy (a free option) more than current users do.
 
 ### Prepare and plot the data
 
 ```{r}
-whereRunPlot <- resultsTidy %>% 
-  separate(WhereAnalysesRun, 
-           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"), 
-           sep = ", ", fill = "right") %>% 
+whereRunPlot <- resultsTidy %>%
+  separate(WhereAnalysesRun,
+           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"),
+           sep = ", ", fill = "right") %>%
   pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
-  mutate(wherePlatforms = 
-           recode(wherePlatforms, 
-                  "Amazon Web Services (AWS)" = "AWS", 
-                  "Galaxy (usegalaxy.org)" = "Galaxy", 
-                  "Galaxy Australia" = "Galaxy", 
-                  "Google Cloud Platform (GCP)" = "GCP", 
-                  "Institutional High Performance Computing cluster (HPC)" = "Institutional HPC", 
+  mutate(wherePlatforms =
+           recode(wherePlatforms,
+                  "Amazon Web Services (AWS)" = "AWS",
+                  "Galaxy (usegalaxy.org)" = "Galaxy",
+                  "Galaxy Australia" = "Galaxy",
+                  "Google Cloud Platform (GCP)" = "GCP",
+                  "Institutional High Performance Computing cluster (HPC)" = "Institutional HPC",
                   "Personal computer (locally)," = "Personal computer (locally)",
                   "local server" = "Institutional HPC")
-         ) %>% 
-  group_by(UserType, wherePlatforms) %>% 
-  summarize(count = n()) %>% 
-  drop_na() %>% 
-  ggplot(aes(x = count, 
-             y = reorder(wherePlatforms, count), 
+         ) %>%
+  group_by(UserType, wherePlatforms) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = count,
+             y = reorder(wherePlatforms, count),
              fill = UserType)) +
-  geom_bar(stat="identity") + 
+  geom_bar(stat="identity") +
   ggtitle("Where do you currently run analyses?")
 
-stylize_bar(whereRunPlot) +
+whereRunPlot %<>% stylize_bar() +
   ylab("Platform")
 ```
 
@@ -971,7 +1009,7 @@ NEED TO FILL OUT
 
 > What source(s) of funds do you use to pay for cloud computing?
 
-Possible answers include 
+Possible answers include
 
 * NHGRI
 * Other NIH
@@ -981,7 +1019,7 @@ Possible answers include
 * Only use free options
 * Other (with free text entry if Other is selected)
 
-The only Other response in this set of responses is NSF. 
+The only Other response in this set of responses is NSF.
 
 Answers are stored in the `FundingSources` column. This question was a select all that apply, so answers will be comma separated, and this question was asked to all survey takers.
 
@@ -1006,7 +1044,7 @@ toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "Whi
 
 ```{r}
 
-toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
+fundingSourcePlot <- toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
   geom_bar(position = "stack", stat = "identity") +
   scale_fill_manual(values = c("#E0DD10", "#035C94")) +
   theme_bw() +
@@ -1014,11 +1052,13 @@ toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = co
   xlab("Count") +
   ylab("Funding Source") +
   theme(panel.background = element_blank(),
-        panel.grid.minor.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank())
 
-ggsave(here("plots/fundingsources.png")) #set save size
+fundingSourcePlot
+
+ggsave(here("plots/fundingsources.png"), plot = fundingSourcePlot) #set save size
 ```
 
 ## Returning User: Length of Use of the AnVIL
@@ -1038,7 +1078,7 @@ timeUsePlot <- resultsTidy %>%
                   vjust = -1, size=2) +
   ggtitle("How long have you been using the AnVIL?")
 
-stylize_bar(timeUsePlot, usertypeColor = FALSE, singleColor = TRUE) +
+timeUsePlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE) +
     xlab("Years of Use") +
     ylab("Count") +
     theme(legend.position = "none")
@@ -1065,7 +1105,7 @@ compNeedsPlot <- resultsTidy %>%
   geom_bar(stat = "identity") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
 
-  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) +
+compNeedsPlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE) +
     theme(legend.position = "none")
 ```
 
@@ -1092,7 +1132,7 @@ recLikePlot <- resultsTidy %>%
   geom_text(aes(label = count, group = RecommendationLikelihood),
                   vjust = -1, size=2)
 
-  stylize_bar(recLikePlot, usertypeColor = FALSE, sequentialColor = TRUE) +
+recLikePlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE) +
     xlab("Recommendation likelihood") +
     ylab("Count") +
     theme(legend.position = "none")
@@ -1107,4 +1147,3 @@ sessionInfo()
 ```
 
 </details>
-

@@ -5,12 +5,10 @@ date: ""
 ---
 
 ```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
-library(tidyverse)
 library(here)
-library(grid) #for Grobs
 
-# Inherits `resultsTidy`
-knitr::knit_child(here("TidyData.Rmd"))
+# Inherit plots
+knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 # Import functions to stylize plots
 source(here("resources/scripts/shared_functions.R"))
 ```
@@ -20,71 +18,7 @@ source(here("resources/scripts/shared_functions.R"))
 # Tool & Resource Knowledge/Comfort level
 
 ```{r, message=FALSE, echo = FALSE}
-toPlotToolKnowledge <- bind_rows(
-  resultsTidy %>%
-    filter(UserType == "Current User") %>%
-    select(starts_with("Score_")) %>%
-    colSums(na.rm = TRUE) %>%
-    as.data.frame() %>% `colnames<-`(c("totalScore")) %>%
-    mutate(nscores = sum(resultsTidy$UserType == "Current User"),
-          avgScore = totalScore / nscores,
-          UserType = "Current Users") %>%
-  mutate(WhereTool = rownames(.)) %>%
-  separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
-  mutate(AnVILorNo =
-           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
-                     AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
-                     ),
-         Tool =
-           recode(Tool, "JupyterNotebooks" = "Jupyter Notebooks",
-                  "WDL" = "Workflows",
-                  "CommandLine" = "Unix / Command Line",
-                  "AccessData" = "Access controlled access data",
-                  "Terra" = "Terra Workspaces",
-                  "BioconductorRStudio" = "Bioconductor & RStudio"
-                  )
-         ),
-  resultsTidy %>%
-    filter(UserType == "Potential User") %>%
-    select(starts_with("Score_AllTech")) %>%
-    colSums() %>%
-    as.data.frame() %>% `colnames<-`(c("totalScore")) %>%
-    mutate(nscores = sum(resultsTidy$UserType == "Potential User"),
-           avgScore = totalScore / nscores,
-           UserType = "Potential Users") %>%
-    mutate(WhereTool = rownames(.)) %>%
-    separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
-    mutate(AnVILorNo =
-           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
-                     AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
-                     ),
-           Tool =
-           recode(Tool, "JupyterNotebooks" = "Jupyter Notebooks",
-                  "WDL" = "Workflows",
-                  "CommandLine" = "Unix / Command Line",
-                  "AccessData" = "Access controlled access data",
-                  "Terra" = "Terra Workspaces",
-                  "BioconductorRStudio" = "Bioconductor & RStudio"
-                  )
-          )
-) %>%
-  mutate(UserType = factor(UserType, levels = c("Potential Users", "Current Users")))
-
-roi <- toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),]
-toPlotToolKnowledge <- rows_append(toPlotToolKnowledge, data.frame(
-          UserType = rep(roi$UserType,2),
-          avgScore = rep(roi$avgScore,2),
-          AnVILorNo = rep(roi$AnVILorNo,2),
-          Tool = c("Bioconductor", "RStudio")
-  )) %>%
-  rows_delete(., data.frame(roi))
-```
-
-```{r message=FALSE, echo=FALSE}
-
-PlotToolKnowledge_customization(ggplot(toPlotToolKnowledge,
-       aes(y = reorder(Tool, avgScore), x = avgScore)) +
-  geom_point(aes(color = UserType, shape = AnVILorNo)))
+PlotToolKnowledge_avg_score
 ```
 
 ## Takeaways
@@ -102,9 +36,7 @@ Overall, there is less comfort with containers or workflows than using various p
 # Types of data analyzed
 
 ```{r, message=FALSE, echo=FALSE}
-resultsTidy %>% 
-  prep_df_typeData() %>%
-  plot_type_data()
+everyone_type_data
 ```
 
 <br/>
@@ -112,39 +44,7 @@ resultsTidy %>%
 # Genomics and Clinical Research Experience
 
 ```{r, message=FALSE, echo = FALSE}
-experienceDf <- resultsTidy %>%
-  select(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
-  pivot_longer(c(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience),
-               names_to = "researchType",
-               values_to = "experienceLevel") %>%
-  mutate(experienceLevel =
-           factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
-         researchType = case_when(
-           researchType == "HumanClinicalExperience" ~ "Human Clinical Research",
-           researchType == "HumanGenomicExperience" ~ "Human Genomic Research",
-           researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research")
-         ) %>%
-  group_by(researchType, experienceLevel, UserType) %>%
-  summarize(n = n())
-
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
-  facet_grid(~researchType) +
-  geom_bar(stat="identity") +
-  theme_bw() +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank()) +
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
-  geom_text(
-    aes(label = after_stat(y), group = experienceLevel),
-    stat = 'summary', fun = sum, vjust = -0.5, size=2
-    ) +
-  ylab("Count") +
-  xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
-  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
-  theme(legend.position = "none")+
-  ggtitle("How much experience do you have analyzing\nthe following data categories?")
+genomicsExpPlot
 ```
 
 ## Takeaway
@@ -160,26 +60,7 @@ ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
 # General interest in controlled access datasets
 
 ```{r message=FALSE, echo=FALSE}
-dataInterestPlot <- resultsTidy %>%
-  group_by(InterestControlledData) %>%
-  summarize(count = n()) %>%
-  ggplot(aes(x = InterestControlledData,
-             y = count,
-             fill = as.factor(InterestControlledData))) +
-  geom_bar(stat="identity") +
-  ggtitle("How interested are you in working with controlled access datasets?") +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
-  annotation_custom(textGrob("Extremely\ninterested", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-3.5,ymax=-3.5) +
-  annotation_custom(textGrob("Not at all\ninterested", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-3.5,ymax=-3.5) +
-  scale_y_continuous(breaks= pretty_breaks()) +
-  geom_text(aes(label = count, group = InterestControlledData),
-                  vjust = -1, size=2)
-
-  stylize_bar(dataInterestPlot, usertypeColor = FALSE, sequentialColor = TRUE) +
-    xlab("Interest level") +
-    ylab("Count") +
-    theme(legend.position = "none")
+dataInterestPlot
 ```
 
 ## Takeaway
@@ -193,40 +74,25 @@ Over half of respondents report they are extremely interested in working with co
 ## All responses
 
 ```{r message=FALSE, echo=FALSE}
-onAnVILDF <- read_delim(here("data/controlledAccessData_codebook.txt"),
-                        delim = "\t",
-                        col_select = c(whichControlledAccess, AnVIL_Availability))
-
-resultsTidy %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
-  plot_which_data()
+everyoneDataPlot
 ```
 
 ## Just responses from those moderately or extremely experienced with clinical data
 
 ```{r message=FALSE, echo=FALSE}
-resultsTidy %>%
-  filter(clinicalFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
-  plot_which_data(subtitle = "Respondents moderately or extremely experienced with clinical data")
+clinicalDataPlot
 ```
 
 ## Just responses from those moderately or extremely experienced with human genomic data
 
 ```{r message=FALSE, echo=FALSE}
-resultsTidy %>%
-  filter(humanGenomicFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
-  plot_which_data(subtitle = "Respondents moderately or extremely experienced with human genomic data")
+humanGenomicDataPlot
 ```
 
 ## Just responses from those moderately or extremely experienced with non-human genomic data
 
 ```{r message=FALSE, echo=FALSE}
-resultsTidy %>%
-  filter(nonHumanGenomicFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF) %>%
-  plot_which_data(subtitle = "Respondents moderately or extremely experienced with non-human genomic data")
+nonHumanGenomicDataPlot
 ```
 
 ## Takeaway

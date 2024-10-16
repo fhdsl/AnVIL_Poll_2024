@@ -6,14 +6,11 @@ output: html_document
 ---
 
 ```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
-library(tidyverse)
 library(here)
-library(grid) #for Grobs
-library(scales) #pretty breaks
 library(kableExtra)
 
-# Inherit `resultsTidy`
-knitr::knit_child(here("TidyData.Rmd"))
+# Inherit plots
+knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 # Import functions to stylize plots
 source(here("resources/scripts/shared_functions.R"))
 ```
@@ -23,22 +20,7 @@ source(here("resources/scripts/shared_functions.R"))
 # Highest Degree
 
 ```{r, message=FALSE, echo=FALSE}
-degreePlot <- resultsTidy %>%  
-  group_by(FurtherSimplifiedDegrees, UserType) %>%
-  summarize(n = n()) %>%
-  ggplot(aes(y = reorder(FurtherSimplifiedDegrees, n, sum),
-             x = n,
-             fill = UserType
-             )) +
-      geom_bar(position = "stack", stat="identity") +
-      geom_text(
-                  aes(label = after_stat(x), group = FurtherSimplifiedDegrees),
-                  stat = 'summary', fun = sum, hjust = -1, size=2
-                ) +
-      coord_cartesian(clip = "off") +
-      ggtitle("What is the highest degree you have attained?")
-
-stylize_bar(degreePlot)
+degreePlot
 ```
 
 ## Takeaway
@@ -50,37 +32,7 @@ Most of the respondents have a PhD or are currently working on a PhD, though a r
 # Kind of Work
 
 ```{r, message = FALSE, echo = FALSE}
-dfForPlotKOW <- resultsTidy %>%
-  separate(KindOfWork,
-           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
-           sep=", ", fill="right") %>%
-  pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
-  select(Timestamp, UserType, whichWorkDescription) %>%
-  mutate(whichWorkDescription =
-           recode(whichWorkDescription, 
-                  "computational education" = "Computational education", 
-                  "Program administration," = "Program administration"),
-         whichWorkDescription = factor(whichWorkDescription),
-         Timestamp = factor(Timestamp)
-         ) %>%
-  drop_na()
-
-factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
-
-ggplot(dfForPlotKOW, 
-       aes(x = Timestamp,
-           y = factor(whichWorkDescription, levels = factorLevel),
-           fill = whichWorkDescription
-           )) +
-  geom_tile() +
-  theme_bw() +
-  theme(axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
-        legend.position = "None") +
-  ylab("") +
-  ggtitle("What kind of work do you do?") +
-  xlab("Respondent") +
-  facet_wrap(~UserType)
+kowPlot
 ```
 
 ## Takeaway
@@ -96,29 +48,7 @@ Only a few responses report project management, leadership, or administration as
 # Institutional Affiliation
 
 ```{r, message=FALSE, echo = FALSE}
-instPlot <- resultsTidy %>%
-  mutate(FurtherSimplifiedInstitutionalType = 
-           factor(FurtherSimplifiedInstitutionalType, 
-                  levels = c("Industry & Other", "Education Focused", "Research Intensive"))) %>%
-  group_by(UserType, FurtherSimplifiedInstitutionalType) %>%
-  summarize(InstitutionalCount = n()) %>%
-  ggplot(aes(
-    y = FurtherSimplifiedInstitutionalType,
-    x = InstitutionalCount,
-    fill = UserType
-  )) +
-  geom_bar(position = "stack", stat = "identity") +
-  geom_text(aes(label = after_stat(x), 
-                group = FurtherSimplifiedInstitutionalType),
-            stat = 'summary', fun = sum, hjust = -1, size=2
-           ) +
-  annotation_custom(textGrob("- R1 University     \n- Med Campus      \n- Research Center\n- NIH                     ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = 2.65, ymax = 2.65) +
-  annotation_custom(textGrob("- Industry             \n- International Loc\n- Unknown           ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = .7, ymax = .7) +
-  annotation_custom(textGrob("- R2 University         \n- Community College", gp=gpar(fontsize=8)),xmin=-8.5,xmax=-8.5,ymin=1.75,ymax=1.75) +
-  coord_cartesian(clip = "off") +
-  ggtitle("What institution are you affiliated with?")
-
-stylize_bar(instPlot)
+instTypePlot
 ```
 
 ## Takeaway
@@ -133,27 +63,8 @@ Most of the individuals using the AnVIL report being affiliated with a research 
 
 # Consortia Affiliations
 
-```{r, message=FALSE, echo = FALSE}
-consortiaTable <- resultsTidy %>%
-  mutate(ConsortiaAffiliations = str_replace_all(ConsortiaAffiliations, c(";|&| and"), ",")) %>%
-  separate(ConsortiaAffiliations,
-           c("whichConsortiumA", "whichConsortiumB", "whichConsortiumC", "whichConsortiumD"),
-           sep=", ", fill = "right") %>%
-  pivot_longer(starts_with("whichConsortium"), values_to = "whichConsortiumName") %>%
-  group_by(whichConsortiumName) %>%
-  summarize(count = n()) %>%
-  drop_na() %>%
-  arrange(count)
-```
-
-
 Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provide an affiliation, with `r nrow(consortiaTable)` unique affiliations represented across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
 
 ```{r, message = FALSE, echo = FALSE}
-consortia_df <- 
-  consortiaTable[which(consortiaTable$count >1),] %>% 
-  rename(`consortium` = whichConsortiumName)
-
 kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
 ```
-

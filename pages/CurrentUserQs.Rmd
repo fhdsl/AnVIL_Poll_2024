@@ -6,13 +6,10 @@ output: html_document
 ---
 
 ```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
-library(tidyverse)
 library(here)
-library(grid) #for Grobs
-library(scales) #pretty breaks
 
-# Inherit `resultsTidy`
-knitr::knit_child(here("TidyData.Rmd"))
+# Inherit plots
+knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 # Import functions to stylize plots
 source(here("resources/scripts/shared_functions.R"))
 ```
@@ -22,22 +19,7 @@ source(here("resources/scripts/shared_functions.R"))
 # Length of Use of the AnVIL
 
 ```{r, message = FALSE, echo = FALSE}
-timeUsePlot <- resultsTidy %>%
-  group_by(LengthOfUse) %>%
-  summarize(count = n()) %>%
-  drop_na() %>%
-  ggplot(aes(x = LengthOfUse,
-             y = count,
-             fill = "#25445A")) +
-  geom_bar(stat = "identity") +
-  geom_text(aes(label = count, group = LengthOfUse),
-                  vjust = -1, size=2) +
-  ggtitle("How long have you been using the AnVIL?")
-
-stylize_bar(timeUsePlot, usertypeColor = FALSE, singleColor = TRUE) +
-    xlab("Years of Use") +
-    ylab("Count") +
-    theme(legend.position = "none")
+timeUsePlot
 ```
 
 ## Takeaway
@@ -49,24 +31,7 @@ We observe a fairly even sampling of the current users with regards to the numbe
 # Foreseeable Computational Needs
 
 ```{r, message=FALSE, echo=FALSE, warning=FALSE}
-compNeedsPlot <- resultsTidy %>%
-  separate(NeededResources,
-           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
-           sep = ", ", fill = "right") %>%
-  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
-  group_by(ResourceDescription) %>%
-  summarize(count = n()) %>%
-  drop_na() %>%
-  ggplot(aes(x = count,
-             y = reorder(ResourceDescription, count),
-             fill = "#25445A")) +
-  geom_text(aes(label = count, group = ResourceDescription),
-                  hjust = -1, size=2) +
-  geom_bar(stat = "identity") +
-  ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
-
-  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) +
-    theme(legend.position = "none")
+compNeedsPlot
 ```
 
 ## Takeaway
@@ -82,27 +47,7 @@ Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current user
 # Recommendation Likelihood
 
 ```{r, message = FALSE, echo = FALSE}
-recLikePlot <- resultsTidy %>%
-  group_by(RecommendationLikelihood) %>%
-  summarize(count = n()) %>%
-  drop_na() %>% #not asked to everyone
-  ggplot(aes(x = RecommendationLikelihood,
-             y = count,
-             fill = as.factor(RecommendationLikelihood))) +
-  geom_bar(stat="identity") +
-  ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1.2,1, "cm")) +
-  annotation_custom(textGrob("Extremely likely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.25,ymax=-1.25) +
-  annotation_custom(textGrob("Not at all likely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.25,ymax=-1.25) +
-  scale_y_continuous(breaks= pretty_breaks()) +
-  geom_text(aes(label = count, group = RecommendationLikelihood),
-                  vjust = -1, size=2)
-
-  stylize_bar(recLikePlot, usertypeColor = FALSE, sequentialColor = TRUE) +
-    xlab("Recommendation likelihood") +
-    ylab("Count") +
-    theme(legend.position = "none")
+recLikePlot
 ```
 
 ## Takeaway

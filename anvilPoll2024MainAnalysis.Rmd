@@ -8,22 +8,26 @@ output: html_document
 
 ```{r message=FALSE, results='hide', warning=FALSE}
 library(here)
-library(tidyverse)
-library(magrittr)
 library(grid) #for Grobs
-
+library(scales)
 
 knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
 source(here("resources/scripts/shared_functions.R"))
 ```
 
-# Insights 
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, echo = FALSE, warning = FALSE
+)
+```
 
-## Identify type of user
+# Main Analysis and Insights
+
+## Identify User Type
 
 **Takeaway:** Of the ```r nrow(resultsTidy)``` responses, ```r nrow(resultsTidy %>% filter(UserType == "CurrentUser"))``` were current users and ```r nrow(resultsTidy %>% filter(UserType == "PotentialUser"))``` were potential users. The majority of current users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
 
-**Potential Follow-ups:** 
+**Potential Follow-ups:**
 
 - Look to see if those potential users who previously used to use the AnVIL show similarity in overall trends with the rest of the potential users
 - Directly ask why they no longer use the AnVIL (Elizabeth mentioned the possibility that the AnVIL is sometimes used in courses or workshops and students may not use it after that)
@@ -36,10 +40,10 @@ First, we group the data by the assigned UserType labels/categories and their re
 
 </details>
 
-```{r, message=FALSE, echo=FALSE}
-typeOfUserPlot <- resultsTidy %>% 
-  group_by(UserType, CurrentUsageDescription) %>% 
-  summarize(count = n()) %>% 
+```{r}
+typeOfUserPlot <- resultsTidy %>%
+  group_by(UserType, CurrentUsageDescription) %>%
+  summarize(count = n()) %>%
   mutate(CurrentUsageDescription = case_when(
     CurrentUsageDescription == "For ongoing projects (e.g., consistent project development and/or work)" ~ "For ongoing projects:\nconsistent project development\nand/or work",
     CurrentUsageDescription == "For completed/long-term projects (e.g., occasional updates/maintenance as needed)" ~ "For completed/long-term projects:\noccasional updates/maintenance\nas needed",
@@ -48,12 +52,12 @@ typeOfUserPlot <- resultsTidy %>%
     CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "I have never\nused the AnVIL",
     CurrentUsageDescription == "I have never heard of the AnVIL" ~ "I have never\nheard of the AnVIL"
   )) %>%
-  ggplot(aes(x = count, y = reorder(CurrentUsageDescription, count), fill = UserType)) + 
-  geom_bar(stat="identity", position ="stack") + 
+  ggplot(aes(x = count, y = reorder(CurrentUsageDescription, count), fill = UserType)) +
+  geom_bar(stat="identity", position ="stack") +
   ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
   geom_text(aes(label = count, group = CurrentUsageDescription),
                   hjust = -0.5, size=2)
-  
+
 typeOfUserPlot %<>% stylize_bar()
 
 typeOfUserPlot
@@ -61,50 +65,9 @@ typeOfUserPlot
 ggsave(here("plots/respondent_usagedescription.png"), plot = typeOfUserPlot) #set plot size
 ```
 
+## Demographics: Highest Degree
 
-## Demographics: Institutional Affiliation 
-
-**Takeaway:**
-
-### Prepare and plot the data
-
-<details><summary>Description of variable definitions and steps</summary>
-
-First, we set the factor level for the further simplified institutional type column (`FurtherSimplifiedInstitutionalType`) so that we know the order on the y-axis when plotting. We then use `group_by()` together with `summarize()` to count the number of each further simplified institutional type for each `UserType`. We plot this as a bar plot with the institutional type on the y-axis and the count on the x-axis and fill the stacked bars according to `UserType`. We add text labels to the bars displaying the sum of the institutional type. We also use custom annotation grobs that break down which institutional types are part of each further simplified institutional type (as defined in `TidyData.Rmd`). Note the liberal uses of spaces to try to align these sub-labels. Finally, we pass the plot to the shared function `stylize_bar()` to change axis labels, fill colors, etc.     
-
-</details>
-
-```{r, message=FALSE, echo = FALSE}
-instTypePlot <- resultsTidy %>%
-  mutate(FurtherSimplifiedInstitutionalType = factor(FurtherSimplifiedInstitutionalType, levels = c("Industry & Other", "Education Focused", "Research Intensive"))) %>%
-  group_by(UserType, FurtherSimplifiedInstitutionalType) %>% summarize(InstitutionalCount = n()) %>%
-  ggplot(aes(
-    y = FurtherSimplifiedInstitutionalType,
-    x = InstitutionalCount,
-    fill = UserType
-  )) + geom_bar(position = "stack", stat = "identity") +
-  geom_text(
-                  aes(label = after_stat(x), group = FurtherSimplifiedInstitutionalType), 
-                  stat = 'summary', fun = sum, hjust = -1, size=2
-                ) +
-  ggtitle("Institutional Affiliation for All Survey Respondents") +
-  annotation_custom(textGrob("- R1 University     \n- Med Campus      \n- Research Center\n- NIH                     ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = 2.65, ymax = 2.65) +
-  annotation_custom(textGrob("- Industry             \n- International Loc\n- Unknown           ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = .7, ymax = .7) +
-  annotation_custom(textGrob("- R2 University         \n- Community College", gp=gpar(fontsize=8)),xmin=-8.5,xmax=-8.5,ymin=1.75,ymax=1.75) +
-  coord_cartesian(clip = "off") +
-  ggtitle("What institution are you affiliated with?")
-
-instTypePlot %<>% stylize_bar()
-
-instTypePlot
-
-ggsave(here("plots/institutionalType_simplified_allResponses_colorUserType.png"), plot = instTypePlot) #set plot size
-```
-
-
-## Demographics: Highest Degree Attained
-
-**Takeaway:**
+**Takeaway:** Most of the respondents have a PhD or are currently working on a PhD, though a range of career stages are represented.
 
 ### Prepare and plot the data
 
@@ -122,7 +85,7 @@ The rest of the changes are related to theme and labels and making sure that the
 
 </details>
 
-```{r, message=FALSE, echo=FALSE}
+```{r}
 
 degreePlot <- resultsTidy %>%
   group_by(FurtherSimplifiedDegrees, UserType) %>%
@@ -139,238 +102,139 @@ degreePlot <- resultsTidy %>%
       coord_cartesian(clip = "off") +
       ggtitle("What is the highest degree you have attained?")
 
-stylize_bar(degreePlot)
+degreePlot %<>% stylize_bar()
 
-ggsave(here("plots/degree_furthersimplified_usertype.png"))
+degreePlot
+
+ggsave(here("plots/degree_furthersimplified_usertype.png")) #set plot size
 ```
 
-## Experience: Genomics and Clinical Research Experience
+## Demographics: Kind of Work
 
-**Takeaway:**
+**Takeaway:** Only a few responses report project management, leadership or administration as their only kind of work. This increases our confidence that this won't confound later questions asking about usage of datasets or tools.
 
-<details><summary>Question and possible answers</summary>
+**Potential Follow-ups:**
 
->How much experience do you have analyzing the following data categories?
-
-The data categories were
-
-* Human genomic
-* Non-human genomic
-* Human clinical
-
-and for each category, possible options were
-
-* Not at all experienced
-* Slightly experienced
-* Somewhat experienced
-* Moderately experienced
-* Extremely experienced
-
-</details>
+- Use this information (togther with other info?) to try to cluster respondents/users into personas.
 
 ### Prepare and plot the data
 
-<details><summary>Description of variable definitions and steps for preparing the data</summary>
+<details><summary>Description of variable definitions and steps</summary>
 
-Here we select the columns containing answers for each data category: `HumanGenomicExperience`, `HumanClinicalExperience`, and `NonHumanGenomicExperience`. We also select `UserType` in case we want to split user type out at all in viewing the data. We use a `pivot_longer` to make a long dataframe that can be grouped and groups counted. The category/column names go to a new column, `researchType` and the values in those columns go to a new column `experienceLevel`. Before we use group by and count, we set the factor level on the new `experienceLevel` column to match the progression from not at all experienced to extremely experienced, and we rename the research categories so that the words have spaces, and we say research instead of experience. Then we use `group_by` and `summarize` to add counts for each combination of research category, experience level, and `UserType`. These counts are in the new `n` column.
-
-</details>
-
-```{r, message=FALSE, echo=FALSE}
-experienceDf <- resultsTidy %>% select(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
-  pivot_longer(c(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience), names_to = "researchType", values_to = "experienceLevel") %>%
-  mutate(experienceLevel =
-                                                                                                                                                          factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
-         researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical Research",
-                                  researchType == "HumanGenomicExperience" ~ "Human Genomic Research",
-                                  researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research")) %>%
-  group_by(researchType, experienceLevel, UserType) %>% summarize(n = n())
-```
-
-<details><summary>Description of variable definitions and steps for plotting the bar graph</summary>
-
-We didn't observe big differences between current and potential users, so we believe this grouped plot is useful for understanding the community as a whole.
-
-This bar plot has the experience level on the x-axis, the count on the y-axis, and fills the bars according to the experience level (though the fill/color legend is turned off by setting legend.position to none). We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like `UserType` that we're not visualizing here.
-
-We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off.
+Note: Can I bring what we used within the persona's work over here to make this code cleaner?
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
-  facet_grid(~researchType) +
-  geom_bar(stat="identity") +
+```{r}
+dfForPlotKOW <- resultsTidy %>%
+  separate(KindOfWork,
+           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
+           sep=", ", fill="right") %>%
+  pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
+  select(Timestamp, UserType, whichWorkDescription) %>%
+  mutate(whichWorkDescription =
+           recode(whichWorkDescription,
+                  "computational education" = "Computational education",
+                  "Program administration," = "Program administration"),
+         whichWorkDescription = factor(whichWorkDescription),
+         Timestamp = factor(Timestamp)
+         ) %>%
+  drop_na()
+
+factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
+
+kowPlot <- ggplot(dfForPlotKOW,
+       aes(x = Timestamp,
+           y = factor(whichWorkDescription, levels = factorLevel),
+           fill = whichWorkDescription
+           )) +
+  geom_tile() +
   theme_bw() +
-  theme(panel.background = element_blank(), panel.grid = element_blank()) +
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
-  geom_text(
-    aes(label = after_stat(y), group = experienceLevel),
-    stat = 'summary', fun = sum, vjust = -0.5, size=2
-) +
-  ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
-  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
-  theme(legend.position = "none")+
-  ggtitle("How much experience do you have analyzing the following data categories?")
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        legend.position = "None") +
+  ylab("") +
+  ggtitle("What kind of work do you do?") +
+  xlab("Respondent") +
+  facet_wrap(~UserType)
 
+kowPlot
 
-ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")) #set plot size
+#save and set save size
 ```
 
-## Experience: Controlled Access Datasets
+## Demographics: Institutional Affiliation
 
 **Takeaway:**
 
-<details><summary>Question and possible answers</summary>
-
->What large, controlled access datasets do you access or would you be interested in accessing using the AnVIL?
-
-* All of Us*
-* Centers for Common Disease Genomics (CCDG)
-* The Centers for Mendelian Genomics (CMG)
-* Clinical Sequencing Evidence-Generating Research (CSER)
-* Electronic Medical Records and Genomics (eMERGE)
-* Gabriella Miller Kids First (GMKF)
-* Genomics Research to Elucidate the Genetics of Rare Diseases (GREGoR)
-* The Genotype-Tissue Expression Project (GTEx)
-* The Human Pangenome Reference Consortium (HPRC)
-* Population Architecture Using Genomics and Epidemiology (PAGE)
-* Undiagnosed Disease Network (UDN)
-* UK Biobank*
-* None
-* Other (Free Text Response)
-
-Since this is a select all that apply question, we expect that there will be multiple responses that are comma separated. The free text responses will likely need recoded as well. The responses are in the `AccessWhichControlledData` column.
-
-</details>
-
 ### Prepare and plot the data
 
-<details><summary>Description of variable definitions and steps for preparing the data</summary>
+<details><summary>Description of variable definitions and steps</summary>
 
-Using a function `prep_df_whichData()` which is in the `shared_functions.R` script since we'll be using this workflow a few times for different subsets of the data, because we want to be able to differentially display the data based on the experience status (experienced with clinical research, human genomics research, etc.) of the person saying they'd like access to the data.
-
-We want to color the bars based on whether or not the controlled access dataset is available on the AnVIL currently. We create a dataframe `onAnVILDF` to report this. Used the [AnVIL dataset catalog/browser](https://explore.anvilproject.org/datasets) to find out this information. However, HPRC and  GREGoR don't show up in that resource, but are both available per these sources: [Announcement for HPRC](https://anvilproject.org/news/2021/03/11/hprc-on-anvil), [Access for HPRC](https://anvilproject.org/data/consortia/HPRC), [Access for GREGoR](https://anvilproject.org/data/consortia/GREGoR). Both GMKF and TCGA are data hosted on other NCPI platforms that are accessible via AnVIL because of interoperability. (See: https://www.ncpi-acc.org/ and https://ncpi-data.org/platforms). We list these as non-AnVIL hosted since while accessible, they are not AnVIL hosted and inaccessible without NCPI. Finally, UDN is described as non-AnVIL hosted as it is in the Data submission pipeline and not yet available.
-
-We'll join this anvil-hosted or not data with the actual data at the end.
-
-Given the input `subset_df`, we expect several answer to be comma separated. Since there are 12 set possible responses (not including "None") and one possible free response answer, we separate the `AccessWhichControlledData` column into 13 columns ("WhichA" through "WhichN"), separating on a comma (specifically a ", " a comma followed by a space, otherwise there were duplicates where the difference was a leading space). Alternative approaches should [consider using `str_trim`](https://stringr.tidyverse.org/reference/str_trim.html). We set fill to "right" but this shouldn't really matter. It's just to suppress the unnecessary warning that they're adding NA's when there aren't 13 responses. If there's only one response, it'll put that response in `WhichA` and fill the rest of them with `NA`. If there's two responses, it'll put those two responses in `WhichA` and `WhichB` and fill the rest of them with `NA`... etc,
-
-We then use `pivot_longer` to grab these columns we just made and put the column names in a new column `WhichChoice` and the values in the each column to a new column `whichControlledAccess`. We drop all the NAs in this new `whichControlledAccess` column (and there's a lot of them there)...
-
-Then we group by the new `whichControlledAccess` column and summarize a count for how many there are for each response.
-
-Then we pass this to a mutate and recode function to simplify the fixed responses to be just their acronyms, to remove asterisks (that let the survey respondent know that that dataset wasn't available because of policy restrictions), and to recode the free text responses (details below in "Notes on free text response recoding").
-
-We use a `left_join()` to join the cleaned data with a dataframe that specifies whether that dataset is currently available on the AnVIL or not. It's a left join rather than a full join so it's only adding the annotation for datasets that are available in the results.
-
-Finally, we return this subset and cleaned dataframe so that it can be plotted.
+First, we set the factor level for the further simplified institutional type column (`FurtherSimplifiedInstitutionalType`) so that we know the order on the y-axis when plotting. We then use `group_by()` together with `summarize()` to count the number of each further simplified institutional type for each `UserType`. We plot this as a bar plot with the institutional type on the y-axis and the count on the x-axis and fill the stacked bars according to `UserType`. We add text labels to the bars displaying the sum of the institutional type. We also use custom annotation grobs that break down which institutional types are part of each further simplified institutional type (as defined in `TidyData.Rmd`). Note the liberal uses of spaces to try to align these sub-labels. Finally, we pass the plot to the shared function `stylize_bar()` to change axis labels, fill colors, etc.     
 
 </details>
 
-<details><summary> Additional notes on free text response recoding</summary>
+```{r}
+instTypePlot <- resultsTidy %>%
+  mutate(FurtherSimplifiedInstitutionalType = factor(FurtherSimplifiedInstitutionalType, levels = c("Industry & Other", "Education Focused", "Research Intensive"))) %>%
+  group_by(UserType, FurtherSimplifiedInstitutionalType) %>% summarize(InstitutionalCount = n()) %>%
+  ggplot(aes(
+    y = FurtherSimplifiedInstitutionalType,
+    x = InstitutionalCount,
+    fill = UserType
+  )) + geom_bar(position = "stack", stat = "identity") +
+  geom_text(
+                  aes(label = after_stat(x), group = FurtherSimplifiedInstitutionalType),
+                  stat = 'summary', fun = sum, hjust = -1, size=2
+                ) +
+  ggtitle("Institutional Affiliation for All Survey Respondents") +
+  annotation_custom(textGrob("- R1 University     \n- Med Campus      \n- Research Center\n- NIH                     ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = 2.65, ymax = 2.65) +
+  annotation_custom(textGrob("- Industry             \n- International Loc\n- Unknown           ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = .7, ymax = .7) +
+  annotation_custom(textGrob("- R2 University         \n- Community College", gp=gpar(fontsize=8)),xmin=-8.5,xmax=-8.5,ymin=1.75,ymax=1.75) +
+  coord_cartesian(clip = "off") +
+  ggtitle("What institution are you affiliated with?")
 
-There were 4 "Other" free response responses
+instTypePlot %<>% stylize_bar()
 
-* "Being able to pull other dbGap data as needed."
-  --> We recoded this to be an "Other"
-* "GnomAD and ClinVar"
-  --> GnomAD and ClinVar are not controlled access datasets so we recoded that response to be "None"
-* "Cancer omics datasets"
-  --> We recoded this to be an "Other"
-* "TCGA"
-  --> This response was left as is since there is a controlled access tier.
+instTypePlot
 
-</details>
+ggsave(here("plots/institutionalType_simplified_allResponses_colorUserType.png"), plot = instTypePlot) #set plot size
+```
+
+## Demographics: Consortia Affiliations
+
+```{r}
+consortiaTable <- resultsTidy %>%
+  mutate(ConsortiaAffiliations = str_replace_all(ConsortiaAffiliations, c(";|&| and"), ",")) %>%
+  separate(ConsortiaAffiliations,
+           c("whichConsortiumA", "whichConsortiumB", "whichConsortiumC", "whichConsortiumD"),
+           sep=", ", fill = "right") %>%
+  pivot_longer(starts_with("whichConsortium"), values_to = "whichConsortiumName") %>%
+  group_by(whichConsortiumName) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  arrange(count)
+
+```
+
+**Takeaway:** Of `r nrow(resultsTidy)` responses, `r sum(!is.na(resultsTidy$ConsortiaAffiliations))` provide an affiliation, with `r nrow(consortiaTable)` unique affiliations represented across those responses (respondents could select more than one consortium). The following table shows the most represented consortia.
+
+### Prepare and display the data
 
 ```{r, message = FALSE, echo = FALSE}
-onAnVILDF <- read_delim(here("data/controlledAccessData_codebook.txt"), delim = "\t", col_select = c(whichControlledAccess, AnVIL_Availability))
-```
+consortia_df <-
+  consortiaTable[which(consortiaTable$count >1),] %>%
+  rename(`consortium` = whichConsortiumName)
 
-<details><summary>Description of variable definitions and steps for preparing the data continued</summary>
-
-Here we set up 4 data frames for plotting
-
-* The first uses all of the responses and sends them through the `prep_df_whichData()` function to clean the data for plotting to see which controlled access datasets are the most popular.
-* The second filters to grab just the responses from those experienced in clinical research using the `clinicalFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
-* The third filters to grab just the responses from those experienced in human genomic research using the `humanGenomicFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
-* The fourth filters to grab just the responses from those experienced in non-human genomic research using the `nonHumanGenomicFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
-
-</details>
-
-```{r, message=FALSE, echo = FALSE}
-whichDataDf <- resultsTidy %>% prep_df_whichData(onAnVILDF = onAnVILDF)
-
-whichDataClinicalSubset <- resultsTidy %>%
-  filter(clinicalFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF)
-
-whichDataHumanGenomicSubset <- resultsTidy %>%
-  filter(humanGenomicFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF)
-
-whichDataNonHumanGenomicSubset <- resultsTidy %>%
-  filter(nonHumanGenomicFlag == TRUE) %>%
-  prep_df_whichData(onAnVILDF = onAnVILDF)
-
-```
-
-<details><summary>Description of variable definitions and steps for plotting the bar graphs</summary>
-
-Also have a function from `shared_functions.R` for this because it's the same plotting steps for each just changing the subtitle and which dataframe is used as input.
-
-This takes the input dataframe and plots a bar plot with the x-axis having the controlled access datasets listed (reordering the listing based off of the count so most popular is on the left), the count number/popularity of requested is on the y-axis, and the fill is based on whether the dataset is available on AnVIL or not.
-
-We change the theme elements like removing panel borders, panel background, and panel grid, and rotate the x-axis tick labels. We add an x- and y- axis label and add a title (and subtitle if specified - which it will be when we're looking at just a subset like those who are experienced with clinical data)
-
-We also add text labels above the bars to say how many times each dataset was marked/requested. Note that we have to use the after_stat, summary, and sum way of doing it again because we use recoding and if we want the labels to be accurate, it has to capture every time we've recoded things to be the same after we used group_by and summarize to count before we recoded. It uses `coord_cartesian(clip = "off")` so these bar text labels aren't cut off and finally returns the plot.
-
-We call this function 4 times
-
-* once for all the data (and don't use a subtitle)
-* next for just those experienced with clinical data (using a subtitle to specify this)
-* next for just those experienced with human genomic data (using a subtitle to specify this)
-* and finally for just those experienced with non-human genomic data (using a subtitle to specify this)
-
-</details>
-
-```{r, message=FALSE, echo = FALSE}
-everyoneDataPlot <- plot_which_data(whichDataDf)
-
-everyoneDataPlot
-
-ggsave(here("plots/whichcontrolleddata.png"), plot = everyoneDataPlot) #add plot size
-```
-
-```{r, message=FALSE, echo=FALSE}
-clinicalDataPlot <- plot_which_data(whichDataClinicalSubset, subtitle = "Respondents moderately or extremely experienced with clinical data")
-
-clinicalDataPlot
-
-ggsave(here("plots/whichcontrolleddata_clinical.png"), plot = clinicalDataPlot) #add plot size
-```
-
-```{r, message=FALSE, echo=FALSE}
-humanGenomicDataPlot <- plot_which_data(whichDataHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with human genomic data")
-
-humanGenomicDataPlot
-
-ggsave(here("plots/whichcontrolleddata_humangenomic.png"), plot = humanGenomicDataPlot) #add plot size
-```
-
-```{r, message=FALSE, echo=FALSE}
-nonHumanGenomicDataPlot <- plot_which_data(whichDataNonHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with non-human genomic data")
-
-nonHumanGenomicDataPlot
-
-ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGenomicDataPlot) #add plot size
+kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
 ```
 
 ## Experience: Tool & Resource Knowledge/Comfort level
 
-**Takeaway:**
+**Takeaway:** Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users report similar comfort levels.
+
+Overall, there is less comfort with containers or workflows than using various programming languages and integrated development environments (IDEs).
 
 ### Prepare and plot the data
 
@@ -380,7 +244,7 @@ We bind the rows of two dataframes, one for current users and one for potential 
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 toPlotToolKnowledge <- bind_rows(
   resultsTidy %>%
     filter(UserType == "Current User") %>%
@@ -432,7 +296,7 @@ toPlotToolKnowledge <- bind_rows(
   mutate(UserType = factor(UserType, levels = c("Potential Users", "Current Users")))
 ```
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 roi <- toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),]
 toPlotToolKnowledgeSeparateBR <- rows_append(toPlotToolKnowledge, data.frame(
           UserType = rep(roi$UserType,2),
@@ -450,52 +314,424 @@ Used [this Stack Overflow response](https://stackoverflow.com/a/72309061) to get
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 PlotToolKnowledge_avg_score <-
   ggplot(toPlotToolKnowledgeSeparateBR, aes(y = reorder(Tool, avgScore), x = avgScore)) +
   geom_point(aes(color = UserType, shape = AnVILorNo))
 
 
-PlotToolKnowledge_customization(PlotToolKnowledge_avg_score) +
-  theme(legend.title = element_blank())
+PlotToolKnowledge_avg_score %<>% PlotToolKnowledge_customization()
+
+PlotToolKnowledge_avg_score
+
 ggsave(here("plots/tooldataresourcecomfortscore_singlepanel.png"), w = 2200, h = 1350, units = "px")
 ```
 
 
-## Awareness: AnVIL Demos
+## Experience: Types of Data Analyzed
+
+<details><summary>Question and possible answers</summary>
+
+>What types of data do you or would you analyze using the AnVIL?
+
+Possible answers include
+
+* Genomes/exomes
+* Transcriptomes
+* Metagenomes
+* Proteomes
+* Metabolomes
+* Epigenomes
+* Structural
+* Single Cell
+* Imaging
+* Phenotypic
+* Electronic Health Record
+* Metadata
+* Survey
+* Other (with free text response)
+
+</details>
 
 **Takeaway:**
 
+### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data </summary>
+
+</details>
+
 ```{r}
-demoPlot <- resultsTidy %>% 
-  group_by(UserType, AnVILDemoAwareness) %>%
+typeOfDataDf <- resultsTidy %>% prep_df_typeData()
+
+typeDataClinicalSubset <- resultsTidy %>%
+  filter(clinicalFlag == TRUE) %>%
+  prep_df_typeData()
+
+typeDataHumanGenomicSubset <- resultsTidy %>%
+  filter(humanGenomicFlag == TRUE) %>%
+  prep_df_typeData()
+```
+
+<details><summary>Description of variable definitions and steps for plotting the bar graphs</summary>
+
+</details>
+
+```{r}
+everyone_type_data <- plot_type_data(typeOfDataDf)
+
+everyone_type_data
+
+ggsave(here("plots/typesOfData.png"), plot=everyone_type_data) #add plot size
+```
+
+```{r}
+clinical_type_data <- plot_type_data(typeDataClinicalSubset, subtitle = "Respondents moderately or extremely experienced with clinical data")
+
+clinical_type_data
+
+ggsave(here("plots/typesOfData_clinical.png"), plot=clinical_type_data)
+```
+
+```{r}
+humangenomic_type_data <- plot_type_data(typeDataHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with human genomic data")
+
+humangenomic_type_data
+
+ggsave(here("plots/typesOfData_humangenomic.png"), plot=humangenomic_type_data)
+```
+
+
+## Experience: Genomics and Clinical Research Experience
+
+**Takeaway:** 21 respondents report that they are extremely experienced in analyzing human genomic data, while only 6 respondents report that they are not at all experienced in analyzing human genomic data. However, for human clinical data and non-human genomic data, more respondents report being not at all experienced in analyzing those data than report being extremely experienced.
+
+**Potential Follow-ups**
+
+- What's the overlap like for those moderately or extremely experienced in these various categories? (Note: Found in the supplemental analyses)
+
+<details><summary>Question and possible answers</summary>
+
+>How much experience do you have analyzing the following data categories?
+
+The data categories were
+
+* Human genomic
+* Non-human genomic
+* Human clinical
+
+and for each category, possible options were
+
+* Not at all experienced
+* Slightly experienced
+* Somewhat experienced
+* Moderately experienced
+* Extremely experienced
+
+</details>
+
+### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data</summary>
+
+Here we select the columns containing answers for each data category: `HumanGenomicExperience`, `HumanClinicalExperience`, and `NonHumanGenomicExperience`. We also select `UserType` in case we want to split user type out at all in viewing the data. We use a `pivot_longer` to make a long dataframe that can be grouped and groups counted. The category/column names go to a new column, `researchType` and the values in those columns go to a new column `experienceLevel`. Before we use group by and count, we set the factor level on the new `experienceLevel` column to match the progression from not at all experienced to extremely experienced, and we rename the research categories so that the words have spaces, and we say research instead of experience. Then we use `group_by` and `summarize` to add counts for each combination of research category, experience level, and `UserType`. These counts are in the new `n` column.
+
+</details>
+
+```{r}
+experienceDf <- resultsTidy %>% select(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
+  pivot_longer(c(HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience), names_to = "researchType", values_to = "experienceLevel") %>%
+  mutate(experienceLevel =
+           factor(experienceLevel, levels = c("Not at all experienced", "Slightly experienced", "Somewhat experienced", "Moderately experienced", "Extremely experienced")),
+         researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical Research",
+                                  researchType == "HumanGenomicExperience" ~ "Human Genomic Research",
+                                  researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research")) %>%
+  group_by(researchType, experienceLevel, UserType) %>% summarize(n = n())
+```
+
+<details><summary>Description of variable definitions and steps for plotting the bar graph</summary>
+
+We didn't observe big differences between current and potential users, so we believe this grouped plot is useful for understanding the community as a whole.
+
+This bar plot has the experience level on the x-axis, the count on the y-axis, and fills the bars according to the experience level (though the fill/color legend is turned off by setting legend.position to none). We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like `UserType` that we're not visualizing here.
+
+We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off.
+
+</details>
+
+```{r}
+genomicsExpPlot <- ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
+  facet_grid(~researchType) +
+  geom_bar(stat="identity") +
+  geom_text(
+    aes(label = after_stat(y), group = experienceLevel),
+    stat = 'summary', fun = sum, vjust = -0.5, size=2
+) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.05, "cm")) +
+  ggtitle("How much experience do you have analyzing the following data categories?")
+
+genomicsExpPlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, ylabel = "Count", xlabel = "Reported Experience Level", rotate=55, hjustv = 1)
+
+genomicsExpPlot
+
+ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")) #set plot size
+```
+
+## Experience: Controlled Access Datasets
+
+**Takeaway:** Generally, over half of respondents report they are extremely interested in working with controlled access datasets.
+
+For specific controlled access datasets ...
+
+- Of the survey provided choices, respondents have accessed or are particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted).
+- 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga).
+- The trend of All of Us, UK Biobank, and GTEx being chosen the most is consistent across all 3 research categories (moderately or extremely experienced with clinical, human genomic, or non-human genomic data).
+
+<details><summary>Question and possible answers</summary>
+
+>What large, controlled access datasets do you access or would you be interested in accessing using the AnVIL?
+
+* All of Us*
+* Centers for Common Disease Genomics (CCDG)
+* The Centers for Mendelian Genomics (CMG)
+* Clinical Sequencing Evidence-Generating Research (CSER)
+* Electronic Medical Records and Genomics (eMERGE)
+* Gabriella Miller Kids First (GMKF)
+* Genomics Research to Elucidate the Genetics of Rare Diseases (GREGoR)
+* The Genotype-Tissue Expression Project (GTEx)
+* The Human Pangenome Reference Consortium (HPRC)
+* Population Architecture Using Genomics and Epidemiology (PAGE)
+* Undiagnosed Disease Network (UDN)
+* UK Biobank*
+* None
+* Other (Free Text Response)
+
+Since this is a select all that apply question, we expect that there will be multiple responses that are comma separated. The free text responses will likely need recoded as well. The responses are in the `AccessWhichControlledData` column.
+
+</details>
+
+### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data</summary>
+
+</details>
+
+```{r}
+dataInterest <- resultsTidy %>%
+  group_by(InterestControlledData) %>%
+  summarize(count = n())
+```
+
+<details><summary>Description of variable definitions and steps for preparing bar plot</summary>
+
+</details>
+
+```{r}
+dataInterestPlot <- dataInterest %>%
+  ggplot(aes(x = InterestControlledData,
+             y = count,
+             fill = as.factor(InterestControlledData))) +
+  geom_bar(stat="identity") +
+  ggtitle("How interested are you in working with controlled access datasets?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  annotation_custom(textGrob("Extremely\ninterested", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-3.5,ymax=-3.5) +
+  annotation_custom(textGrob("Not at all\ninterested", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-3.5,ymax=-3.5) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = InterestControlledData),
+                vjust = -1, size=2)
+
+dataInterestPlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, xlabel = "Interest level", ylabel = "Count")
+
+dataInterestPlot
+```
+
+<details><summary>Description of variable definitions and steps for preparing the data</summary>
+
+Using a function `prep_df_whichData()` which is in the `shared_functions.R` script since we'll be using this workflow a few times for different subsets of the data, because we want to be able to differentially display the data based on the experience status (experienced with clinical research, human genomics research, etc.) of the person saying they'd like access to the data.
+
+We want to color the bars based on whether or not the controlled access dataset is available on the AnVIL currently. We create a dataframe `onAnVILDF` to report this. Used the [AnVIL dataset catalog/browser](https://explore.anvilproject.org/datasets) to find out this information. However, HPRC and  GREGoR don't show up in that resource, but are both available per these sources: [Announcement for HPRC](https://anvilproject.org/news/2021/03/11/hprc-on-anvil), [Access for HPRC](https://anvilproject.org/data/consortia/HPRC), [Access for GREGoR](https://anvilproject.org/data/consortia/GREGoR). Both GMKF and TCGA are data hosted on other NCPI platforms that are accessible via AnVIL because of interoperability. (See: https://www.ncpi-acc.org/ and https://ncpi-data.org/platforms). We list these as non-AnVIL hosted since while accessible, they are not AnVIL hosted and inaccessible without NCPI. Finally, UDN is described as non-AnVIL hosted as it is in the Data submission pipeline and not yet available.
+
+We'll join this anvil-hosted or not data with the actual data at the end.
+
+Given the input `subset_df`, we expect several answer to be comma separated. Since there are 12 set possible responses (not including "None") and one possible free response answer, we separate the `AccessWhichControlledData` column into 13 columns ("WhichA" through "WhichN"), separating on a comma (specifically a ", " a comma followed by a space, otherwise there were duplicates where the difference was a leading space). Alternative approaches should [consider using `str_trim`](https://stringr.tidyverse.org/reference/str_trim.html). We set fill to "right" but this shouldn't really matter. It's just to suppress the unnecessary warning that they're adding NA's when there aren't 13 responses. If there's only one response, it'll put that response in `WhichA` and fill the rest of them with `NA`. If there's two responses, it'll put those two responses in `WhichA` and `WhichB` and fill the rest of them with `NA`... etc,
+
+We then use `pivot_longer` to grab these columns we just made and put the column names in a new column `WhichChoice` and the values in the each column to a new column `whichControlledAccess`. We drop all the NAs in this new `whichControlledAccess` column (and there's a lot of them there)...
+
+Then we group by the new `whichControlledAccess` column and summarize a count for how many there are for each response.
+
+Then we pass this to a mutate and recode function to simplify the fixed responses to be just their acronyms, to remove asterisks (that let the survey respondent know that that dataset wasn't available because of policy restrictions), and to recode the free text responses (details below in "Notes on free text response recoding").
+
+We use a `left_join()` to join the cleaned data with a dataframe that specifies whether that dataset is currently available on the AnVIL or not. It's a left join rather than a full join so it's only adding the annotation for datasets that are available in the results.
+
+Finally, we return this subset and cleaned dataframe so that it can be plotted.
+
+</details>
+
+<details><summary> Additional notes on free text response recoding</summary>
+
+There were 4 "Other" free response responses
+
+* "Being able to pull other dbGap data as needed."
+  --> We recoded this to be an "Other"
+* "GnomAD and ClinVar"
+  --> GnomAD and ClinVar are not controlled access datasets so we recoded that response to be "None"
+* "Cancer omics datasets"
+  --> We recoded this to be an "Other"
+* "TCGA"
+  --> This response was left as is since there is a controlled access tier.
+
+</details>
+
+```{r}
+onAnVILDF <- read_delim(here("data/controlledAccessData_codebook.txt"), delim = "\t", col_select = c(whichControlledAccess, AnVIL_Availability))
+```
+
+<details><summary>Description of variable definitions and steps for preparing the data continued</summary>
+
+Here we set up 4 data frames for plotting
+
+* The first uses all of the responses and sends them through the `prep_df_whichData()` function to clean the data for plotting to see which controlled access datasets are the most popular.
+* The second filters to grab just the responses from those experienced in clinical research using the `clinicalFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
+* The third filters to grab just the responses from those experienced in human genomic research using the `humanGenomicFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
+* The fourth filters to grab just the responses from those experienced in non-human genomic research using the `nonHumanGenomicFlag` column (described earlier in the Clean Data -> Simplified experience status for various research categories (clinical, human genomics, non-human genomics) subsection)
+
+</details>
+
+```{r}
+whichDataDf <- resultsTidy %>% prep_df_whichData(onAnVILDF = onAnVILDF)
+
+whichDataClinicalSubset <- resultsTidy %>%
+  filter(clinicalFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF)
+
+whichDataHumanGenomicSubset <- resultsTidy %>%
+  filter(humanGenomicFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF)
+
+whichDataNonHumanGenomicSubset <- resultsTidy %>%
+  filter(nonHumanGenomicFlag == TRUE) %>%
+  prep_df_whichData(onAnVILDF = onAnVILDF)
+
+```
+
+<details><summary>Description of variable definitions and steps for plotting the bar graphs</summary>
+
+Also have a function from `shared_functions.R` for this because it's the same plotting steps for each just changing the subtitle and which dataframe is used as input.
+
+This takes the input dataframe and plots a bar plot with the x-axis having the controlled access datasets listed (reordering the listing based off of the count so most popular is on the left), the count number/popularity of requested is on the y-axis, and the fill is based on whether the dataset is available on AnVIL or not.
+
+We change the theme elements like removing panel borders, panel background, and panel grid, and rotate the x-axis tick labels. We add an x- and y- axis label and add a title (and subtitle if specified - which it will be when we're looking at just a subset like those who are experienced with clinical data)
+
+We also add text labels above the bars to say how many times each dataset was marked/requested. Note that we have to use the after_stat, summary, and sum way of doing it again because we use recoding and if we want the labels to be accurate, it has to capture every time we've recoded things to be the same after we used group_by and summarize to count before we recoded. It uses `coord_cartesian(clip = "off")` so these bar text labels aren't cut off and finally returns the plot.
+
+We call this function 4 times
+
+* once for all the data (and don't use a subtitle)
+* next for just those experienced with clinical data (using a subtitle to specify this)
+* next for just those experienced with human genomic data (using a subtitle to specify this)
+* and finally for just those experienced with non-human genomic data (using a subtitle to specify this)
+
+</details>
+
+```{r}
+everyoneDataPlot <- plot_which_data(whichDataDf)
+
+everyoneDataPlot
+
+ggsave(here("plots/whichcontrolleddata.png"), plot = everyoneDataPlot) #add plot size
+```
+
+```{r}
+clinicalDataPlot <- plot_which_data(whichDataClinicalSubset, subtitle = "Respondents moderately or extremely experienced with clinical data")
+
+clinicalDataPlot
+
+ggsave(here("plots/whichcontrolleddata_clinical.png"), plot = clinicalDataPlot) #add plot size
+```
+
+```{r}
+humanGenomicDataPlot <- plot_which_data(whichDataHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with human genomic data")
+
+humanGenomicDataPlot
+
+ggsave(here("plots/whichcontrolleddata_humangenomic.png"), plot = humanGenomicDataPlot) #add plot size
+```
+
+```{r}
+nonHumanGenomicDataPlot <- plot_which_data(whichDataNonHumanGenomicSubset, subtitle = "Respondents moderately or extremely experienced with non-human genomic data")
+
+nonHumanGenomicDataPlot
+
+ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGenomicDataPlot) #add plot size
+```
+
+## Awareness: Monthly AnVIL Demos
+
+**Takeaway:** Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users.
+
+### Prepare and plot the data
+
+#### Raw responses
+
+```{r}
+demoPlotRaw <- resultsTidy %>%
+  group_by(UserType, AnVILDemo) %>%
   summarize(count = n()) %>%
-  ggplot(aes(y = AnVILDemoAwareness, 
-             x = count, 
-             fill = UserType)) + 
+  ggplot(aes(y=reorder(AnVILDemo, count),
+             x = count,
+             fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
-stylize_bar(demoPlot) +
-  ylab("Awareness")
+demoPlotRaw %<>% stylize_bar()
+
+demoPlotRaw
+```  
+
+#### Responses recoded to focus on awareness
+
+```{r}
+demoPlot <- resultsTidy %>%
+  group_by(UserType, AnVILDemoAwareness) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(y = AnVILDemoAwareness,
+             x = count,
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you attended a monthly AnVIL Demo?")
+
+demoPlot %<>% stylize_bar(ylabel = "Awareness")
+
+demoPlot
 ```
 
 ## Awareness: AnVIL Support Forum
 
-**Takeaway:**
+**Takeaway:** Most respondents have not used the AnVIL support forum.
 
-```{r, message=FALSE, echo=FALSE}
-forumdf <- resultsTidy %>% 
-  mutate(AnVILSupportForum = str_replace(AnVILSupportForum, pattern = "No, ", replacement= "No ")) %>% 
-  separate(AnVILSupportForum, c("forumInteractionA", "forumInteractionB", "forumInteractionC"), 
-           sep = ", ", 
-           fill = "right") %>% 
+- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users.
+- While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
+
+### Prepare and plot the data
+
+```{r}
+forumdf <- resultsTidy %>%
+  mutate(AnVILSupportForum = str_replace(AnVILSupportForum,
+                                         pattern = "No, ",
+                                         replacement= "No ")) %>%
+  separate(AnVILSupportForum,
+           c("forumInteractionA", "forumInteractionB", "forumInteractionC"),
+           sep = ", ",
+           fill = "right") %>%
   pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
-  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>% 
-  summarize(count = n()) %>% 
-  drop_na() %>% 
-  mutate(forumInteractionDescription = 
-           factor(forumInteractionDescription, levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
+  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  mutate(forumInteractionDescription =
+           factor(forumInteractionDescription,
+                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
         forumAwareness = factor(
           case_when(
           forumInteractionDescription == "Posted in" ~ "Aware of",
@@ -503,30 +739,57 @@ forumdf <- resultsTidy %>%
           forumInteractionDescription == "Read through others' posts" ~ "Aware of",
           forumInteractionDescription == "No but aware of" ~ "Aware of",
           forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
-        ), levels = c("Not Aware of", "Aware of")),
-        forumUse = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Have utilized",
-          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
-          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
-          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
-          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
-        ), levels = c("Have not utilized", "Have utilized"))
+        ), levels = c("Not Aware of", "Aware of"))
 )
 ```
 
-```{r, message=FALSE, echo=FALSE}
-forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) + 
+#### Raw responses
+
+```{r}
+forumPlotRaw <- ggplot(forumdf,
+                       aes(y = reorder(forumInteractionDescription, count),
+                           x = count,
+                           fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
-stylize_bar(forumPlot) +
-  ylab("Awareness")
+forumPlotRaw %<>% stylize_bar()
+
+forumPlotRaw
 ```
 
-## Preferences: Feature importance for current vs potential users
+#### Responses recoded to focus on awareness
 
-**Takeaway:**
+```{r}
+forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) +
+  geom_bar(stat = "identity") +
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+
+forumPlot %<>% stylize_bar(ylabel = "Awareness")
+
+forumPlot
+```
+
+## Preferences: Feature Importance Ranking
+
+**Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+
+<details><summary>Question and possible answers</summary>
+
+>Rank the following features or resources according to their importance for your continued use of the AnVIL
+
+>Rank the following features or resources according to their importance to you as a potential user of the AnVIL?
+
+* Easy billing setup
+* Flat-rate billing rather than use-based
+* Free version with limited compute or storage
+* On demand support and documentation
+* Specific tools or datasets are available/supported
+* Greater adoption of the AnVIL by the scientific community
+
+We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
+
+</details>
 
 ### Prepare and plot the data
 
@@ -553,7 +816,7 @@ After these two dataframes are bound together (`bind_rows`), the rest of the ste
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 totalRanksdf <-
   bind_rows(
     resultsTidy %>%
@@ -601,40 +864,43 @@ Finally, we'll reverse the x-axis so that most important is on the right and lea
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
-gdumbbell <- ggplot(totalRanksdf, aes(x = avgRank, y = reorder(Feature, -avgRank))) +
+```{r}
+
+gdumbbell <- ggplot(totalRanksdf,
+                    aes(x = avgRank,
+                        y = reorder(Feature, -avgRank))) +
   geom_line() +
   geom_point(aes(color = Usertype), size = 3) +
-  theme(panel.background = element_blank()) + theme_bw() + theme(legend.position = "bottom") +
-  xlab("Average Rank") +
-  ylab("Feature") +
-  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL") +
-  scale_color_manual(values = c("#E0DD10", "#035C94")) +
-  theme(legend.title = element_blank())
+  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL")
 
-gdumbbell <- gdumbbell +
-  scale_x_continuous(breaks = 1:6, labels = 1:6, limits = c(1,6))+
-  annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.5,ymax=-0.5) +
-  annotation_custom(textGrob("Least\nimportant", gp=gpar(fontsize=8, fontface= "bold")),xmin=6,xmax=6,ymin=-0.5,ymax=-0.5) +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm"))
 
-ggsave(here("plots/dumbbellplot_xlim16_rankfeatures.png"), plot = gdumbbell)
-
-gdumbbell <- gdumbbell +
- scale_x_reverse(limits = c(6,1), breaks = 6:1, labels = 6:1) +
- annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
- annotation_custom(textGrob("Least\nimportant", gp=gpar(fontsize=8, fontface= "bold")),xmin=-6,xmax=-6,ymin=-0.5,ymax=-0.5)
+gdumbbell %<>% stylize_dumbbell(xmax=6, importance = TRUE)
 
 gdumbbell
 
-ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbbell)
+ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbbell) #set plot size
 
 ```
 
-## Preferences: Training Workshop Modality
+## Preferences: Training Workshop Modality Ranking
 
-**Takeaway:**
+**Takeaway:** Both current and potential users vastly prefer virtual training workshops.
+
+<details><summmary>Question and possible answers</summary>
+
+>Please rank how/where you would prefer to attend AnVIL training workshops.
+
+Possible answers include
+
+* On-site at my institution: `AnVILTrainingWorkshopsOnSite`
+* Virtual: `AnVILTrainingWorkshopsVirtual`
+* Conference (e.g., CSHL, AMIA): `AnVILTrainingWorkshopsConference`
+* AnVIL-specific event: `AnVILTrainingWorkshopsSpecEvent`
+* Other: `AnVILTrainingWorkshopsOther`
+
+The responses are stored in the starts with `AnVILTrainingWorkshops` columns
+
+</details>
 
 ### Prepare and plot the data
 
@@ -642,7 +908,7 @@ ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbb
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 toPlotTrainingRanks <- bind_rows(
   resultsTidy %>%
     filter(UserType == "Current User") %>%
@@ -673,49 +939,197 @@ toPlotTrainingRanks <- bind_rows(
 
 </details>
 
-```{r, message=FALSE, echo = FALSE}
+```{r}
 tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingType, -avgRank))) +
   geom_line() +
   geom_point(aes(color = UserType), size = 3) +
-  theme(panel.background = element_blank()) + theme_bw() + theme(legend.position = "bottom") +
-  xlab("Average Rank") +
-  ylab("Training Workshop Modality") +
-  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.") +
-  scale_color_manual(values = c("#E0DD10", "#035C94")) +
-  theme(legend.title=element_blank())
+  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.")
 
-tdumbbell <- tdumbbell +
-  scale_x_continuous(breaks = 5:1, labels = 5:1, limits = c(1,5))+
-  annotation_custom(textGrob("Most\npreferred", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.5,ymax=-0.5) +
-  annotation_custom(textGrob("Least\npreferred", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-0.5,ymax=-0.5) +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm"))
 
-ggsave(here("plots/dumbbellplot_xlim15_trainingmodalitypref.png"), plot = tdumbbell)
-
-tdumbbell <- tdumbbell +
-  scale_x_reverse(limits = c(5,1)) +
-  annotation_custom(textGrob("Most\npreferred", gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
-  annotation_custom(textGrob("Least\npreferred", gp=gpar(fontsize=8, fontface= "bold")),xmin=-5,xmax=-5,ymin=-0.5,ymax=-0.5)
+tdumbbell %<>% stylize_dumbbell(preference = TRUE, xlabel = "Average Rank", ylabel = "Training Workshop Modality", xmax=5)
 
 tdumbbell
 
-ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot = tdumbbell)
+ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot = tdumbbell) #set plot size
 ```
 
-## Returning User Specific: Likely to recommend?
+## Preferences: Where analyses are currently run
 
-**Takeaway:**
+**Takeaway:** Institutional HPC and locally/personal computers are the most common responses.
 
-## Returning User Specific: Number of years of use
+- Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample.
+- We also see that potential users report using Galaxy (a free option) more than current users do.
 
-**Takeaway:**
+### Prepare and plot the data
 
-## Returning User Specific: Foreseeable Computational Needs
+```{r}
+whereRunPlot <- resultsTidy %>%
+  separate(WhereAnalysesRun,
+           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"),
+           sep = ", ", fill = "right") %>%
+  pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
+  mutate(wherePlatforms =
+           recode(wherePlatforms,
+                  "Amazon Web Services (AWS)" = "AWS",
+                  "Galaxy (usegalaxy.org)" = "Galaxy",
+                  "Galaxy Australia" = "Galaxy",
+                  "Google Cloud Platform (GCP)" = "GCP",
+                  "Institutional High Performance Computing cluster (HPC)" = "Institutional HPC",
+                  "Personal computer (locally)," = "Personal computer (locally)",
+                  "local server" = "Institutional HPC")
+         ) %>%
+  group_by(UserType, wherePlatforms) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = count,
+             y = reorder(wherePlatforms, count),
+             fill = UserType)) +
+  geom_bar(stat="identity") +
+  ggtitle("Where do you currently run analyses?")
 
-**Takeaway:**
+whereRunPlot %<>% stylize_bar(ylabel = "Platform")
 
-## Session Info and other analysis notes
+whereRunPlot
+
+```
+
+## Preferences: DMS compliance/data repositories
+
+NEED TO FILL OUT
+
+## Preferences: Source for cloud computing funds
+
+**Takeaway:** NIH funds (NHGRI or otherwise) as well as institutional funds are the most commonly reported funding sources.
+
+<details><summary>Question and possible answers</summary>
+
+> What source(s) of funds do you use to pay for cloud computing?
+
+Possible answers include
+
+* NHGRI
+* Other NIH
+* Foundation Grant
+* Institutional funds
+* Don't know
+* Only use free options
+* Other (with free text entry if Other is selected)
+
+The only Other response in this set of responses is NSF.
+
+Answers are stored in the `FundingSources` column. This question was a select all that apply, so answers will be comma separated, and this question was asked to all survey takers.
+
+</details>
+
+### Prepare and plot the data
+
+<details><summary> Prepare the data variable definition and steps </summary>
+
+</details>
+
+```{r}
+toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG"), sep = ", ", fill="right") %>%
+  pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichFundingSource") %>%
+  drop_na(whichFundingSource) %>%
+  group_by(whichFundingSource, UserType) %>% summarize(count = n())
+```
+
+<details><summary> Plot the data variable definition and steps </summary>
+
+</details>
+
+```{r}
+
+fundingSourcePlot <- toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
+  geom_bar(position = "stack", stat = "identity") +
+  ggtitle("What source(s) of funds do you use to pay for cloud computing?")
+
+fundingSourcePlot %<>% stylize_bar(ylabel="Funding Source")
+
+fundingSourcePlot
+
+ggsave(here("plots/fundingsources.png"), plot = fundingSourcePlot) #set save size
+```
+
+## Returning User: Length of Use of the AnVIL
+
+**Takeaway:** Respondents have a range of experience on AnVIL.
+
+```{r}
+timeUsePlot <- resultsTidy %>%
+  group_by(LengthOfUse) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = LengthOfUse,
+             y = count,
+             fill = "#25445A")) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = count, group = LengthOfUse),
+                  vjust = -1, size=2) +
+  ggtitle("How long have you been using the AnVIL?")
+
+timeUsePlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE, xlabel = "Years of Use", ylabel = "Count")
+
+timeUsePlot
+
+```
+
+## Returning User: Foreseeable Computational Needs
+
+**Takeaway:** Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
+
+```{r}
+compNeedsPlot <- resultsTidy %>%
+  separate(NeededResources,
+           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
+           sep = ", ", fill = "right") %>%
+  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
+  group_by(ResourceDescription) %>%
+  summarize(count = n()) %>%
+  drop_na() %>%
+  ggplot(aes(x = count,
+             y = reorder(ResourceDescription, count),
+             fill = "#25445A")) +
+  geom_text(aes(label = count, group = ResourceDescription),
+                  hjust = -1, size=2) +
+  geom_bar(stat = "identity") +
+  ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
+
+compNeedsPlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE)
+
+compNeedsPlot
+```
+
+
+## Returning User: Recommendation likelihood
+
+**Takeaway:** There's a fairly bimodal distribution here with users either extremely likely or only moderately likely to recommend the AnVIL.
+
+```{r}
+recLikePlot <- resultsTidy %>%
+  group_by(RecommendationLikelihood) %>%
+  summarize(count = n()) %>%
+  drop_na() %>% #not asked to everyone
+  ggplot(aes(x = RecommendationLikelihood,
+             y = count,
+             fill = as.factor(RecommendationLikelihood))) +
+  geom_bar(stat="identity") +
+  ggtitle("How likely are you to recommend the AnVIL to a colleague?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1.2,1, "cm")) +
+  annotation_custom(textGrob("Extremely likely", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-1.2,ymax=-1.2) +
+  annotation_custom(textGrob("Not at all likely", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-1.2,ymax=-1.2) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = RecommendationLikelihood),
+                  vjust = -1, size=2)
+
+recLikePlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, xlabel = "Recommendation likelihood", ylabel = "Count")
+
+recLikePlot
+
+```
+
+## Session Info
 
 <details><summary>Session Info</summary>
 

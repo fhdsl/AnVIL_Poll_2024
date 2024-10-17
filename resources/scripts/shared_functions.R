@@ -3,27 +3,30 @@
 library(magrittr)
 library(tidyverse)
 
-stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE){
+stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE, xlabel = "Count", ylabel = "", legendpos = "right", rotate = 0, hjustv = 0){
   if (usertypeColor) {
     fillColors <- c("#E0DD10", "#035C94")
   }
   else if (singleColor){
     fillColors <- c("#25445A")
+    legendpos = "none"
+
   }
   else if (sequentialColor){
     fillColors <- c("#035C94","#035385","#024A77","#024168", "#02395B")
+    legendpos = "none"
   }
   return(
     gplot +
     theme_classic() +
-    ylab("") +
-    xlab("Count") +
-    theme(legend.title = element_blank()) +
+    ylab(ylabel) +
+    xlab(xlabel) +
+    theme(legend.title = element_blank(), legend.position = legendpos, axis.text.x = element_text(angle=rotate, hjust=hjustv)) +
     scale_fill_manual(values = fillColors, na.translate = F)
   )
 }
 
-stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference = FALSE){
+stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference = FALSE, xlabel="Average Rank Choice", ylabel=""){
   if (importance){
     textGrobMost <- "Most\nimportant"
     textGrobLeast <- "Least\nimportant"
@@ -38,14 +41,34 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
       theme(panel.background = element_blank(),
             legend.position = "bottom",
             legend.title = element_blank()) +
-      xlab("Average Rank Choice") +
-      ylab("") +
+      xlab(xlabel) +
+      ylab(ylabel) +
       scale_color_manual(values = c("#E0DD10", "#035C94")) +
       coord_cartesian(clip = "off") +
       theme(plot.margin = margin(1,1,1,1.1, "cm")) +
       scale_x_reverse(limits = c(xmax,1), breaks = xmax:1, labels = xmax:1) +
       annotation_custom(textGrob(textGrobMost, gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
       annotation_custom(textGrob(textGrobLeast, gp=gpar(fontsize=8, fontface= "bold")),xmin=-xmax,xmax=-xmax,ymin=-0.5,ymax=-0.5)
+  )
+}
+
+PlotToolKnowledge_customization <- function(gplot){
+  return(
+    gplot +
+      scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) +
+      ylab("Tool or Data Resource") +
+      xlab("Average Knowledge or Comfort Score") +
+      theme_bw() +
+      theme(panel.background = element_blank(),
+            panel.grid.minor.x = element_blank()) +
+      annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
+      annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
+      coord_cartesian(clip = "off") +
+      theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+      ggtitle("How would you rate your knowledge of or\ncomfort with these technologies or data features?") +
+      scale_color_manual(values = c("#E0DD10", "#035C94")) +
+      scale_shape_manual(values = c(4, 16)) +
+      theme(legend.title = element_blank())
   )
 }
 
@@ -110,6 +133,37 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
               size=2) +
     coord_cartesian(clip = "off") +
     scale_fill_manual(values = c("#25445A", "#7EBAC0", "grey"))
+
+  return(toreturnplot)
+}
+
+prep_df_typeData <- function(subset_df){
+  subset_df %<>% separate(TypesOfData, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN", "WhichO"), sep = ", ", fill="right") %>%
+    pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichTypeData") %>%
+    drop_na(whichTypeData) %>%
+    group_by(whichTypeData) %>% summarize(count = n()) %>%
+    mutate(whichTypeData =
+             recode(whichTypeData,
+                    "I don't analyze data on AnVIL" = NA_character_,
+                    "I store data in AnVIL. I don’t analyze it." = NA_character_,
+                    "Used in training for analysis of genomes (variant calling)" = "Variant Calling"
+             )
+    ) %>%
+    drop_na(whichTypeData)
+  return(subset_df)
+}
+
+plot_type_data <- function(inputToPlotDF, subtitle = NULL){
+  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count),
+                                            y = count,
+                                            fill = "#25445A")) +
+    geom_bar(stat="identity") +
+    ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) +
+    geom_text(aes(label = after_stat(y), group = whichTypeData),
+              stat = 'summary', fun = sum, vjust = -1, size=2) +
+    coord_cartesian(clip = "off")
+
+  toreturnplot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE, xlabel = "Types of data", ylabel = "Count", hjustv = 1, rotate=45)
 
   return(toreturnplot)
 }

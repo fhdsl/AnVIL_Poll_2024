@@ -10,8 +10,6 @@ library(googlesheets4)
 library(tidyverse)
 library(magrittr) #for %<>%
 library(here)
-library(grid) #for Grobs and unit()
-library(scales) #pretty breaks
 ```
 
 # Read in data

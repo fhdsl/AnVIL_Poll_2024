@@ -3,27 +3,30 @@
 library(magrittr)
 library(tidyverse)
 
-stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE){
+stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE, xlabel = "Count", ylabel = "", legendpos = "right", rotate = 0, hjustv = 0){
   if (usertypeColor) {
     fillColors <- c("#E0DD10", "#035C94")
   }
   else if (singleColor){
     fillColors <- c("#25445A")
+    legendpos = "none"
+
   }
   else if (sequentialColor){
     fillColors <- c("#035C94","#035385","#024A77","#024168", "#02395B")
+    legendpos = "none"
   }
   return(
     gplot +
     theme_classic() +
-    ylab("") +
-    xlab("Count") +
-    theme(legend.title = element_blank()) +
+    ylab(ylabel) +
+    xlab(xlabel) +
+    theme(legend.title = element_blank(), legend.position = legendpos, axis.text.x = element_text(angle=rotate, hjust=hjustv)) +
     scale_fill_manual(values = fillColors, na.translate = F)
   )
 }
 
-stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference = FALSE){
+stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference = FALSE, xlabel="Average Rank Choice", ylabel=""){
   if (importance){
     textGrobMost <- "Most\nimportant"
     textGrobLeast <- "Least\nimportant"
@@ -38,8 +41,8 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
       theme(panel.background = element_blank(),
             legend.position = "bottom",
             legend.title = element_blank()) +
-      xlab("Average Rank Choice") +
-      ylab("") +
+      xlab(xlabel) +
+      ylab(ylabel) +
       scale_color_manual(values = c("#E0DD10", "#035C94")) +
       coord_cartesian(clip = "off") +
       theme(plot.margin = margin(1,1,1,1.1, "cm")) +
@@ -151,14 +154,16 @@ prep_df_typeData <- function(subset_df){
 }
 
 plot_type_data <- function(inputToPlotDF, subtitle = NULL){
-  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count), y = count)) +
-    geom_bar(stat="identity") + 
-    theme_classic() + theme(panel.background = element_blank(), panel.grid = element_blank()) +
-    theme(axis.text.x = element_text(angle=45, hjust=1)) +
-    xlab("Types of data") + ylab("Count") + 
+  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count),
+                                            y = count,
+                                            fill = "#25445A")) +
+    geom_bar(stat="identity") +
     ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) +
-    geom_text(aes(label = after_stat(y), group = whichTypeData), 
+    geom_text(aes(label = after_stat(y), group = whichTypeData),
               stat = 'summary', fun = sum, vjust = -1, size=2) +
     coord_cartesian(clip = "off")
+
+  toreturnplot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE, xlabel = "Types of data", ylabel = "Count", hjustv = 1, rotate=45)
+
   return(toreturnplot)
 }

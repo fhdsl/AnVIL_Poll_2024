@@ -26,7 +26,7 @@ kindOfWorkDF <-
   pivot_wider(names_from = KindOfWork, values_from = value, values_fill = FALSE)
 ```
 
-## Number of reported kinds of work description for each response 
+## Number of reported kinds of work description for each response
 
 add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
 
@@ -42,7 +42,7 @@ numSelectedDF <- tibble("X" = numSelected) %>%
 numSelectedDF
 ```
 
-## What were the most common single responses 
+## What were the most common single responses
 
 ```{r}
 singleResponseRows <- which(rowSums(kindOfWorkDF[2:ncol(kindOfWorkDF)]) == 1) # these rows are responses where they only provided one description
@@ -55,9 +55,9 @@ tibble("description" = unlist(lapply(1:length(singleResponseRows), function(x) c
 
 Look at [this solution from stackoverflow to find pairs](https://stackoverflow.com/a/62374554), but it only works to find pairs that are right next to each other, ugh. So just wrote my own function.
 
-note that kindOfWorkDF's first column is a timestamp, we don't want that one for this
+note that the first column of `kindOfWorkDF` is a timestamp and we don't want that one for this
 
-note also combn will also fail if there aren't enough non-NA values, so we want to only select rows with more than one description
+note also `combn` will also fail if there aren't enough non-NA values, so we want to only select rows with more than one description
 
 Given those two notes, pass this function the following input data frame
 
@@ -98,9 +98,9 @@ pairs_all <- unlist(lapply(
 print(pairs_all, n = nrow(pairs_all))
 ```
 
-This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not. 
+This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not.
 
-## How many times was each description selected/reported 
+## How many times was each description selected/reported
 
 ```{r}
 numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[, 2:ncol(kindOfWorkDF)])) %>%
@@ -109,7 +109,7 @@ numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[, 2:ncol(kin
 numResponsesPerDescription
 ```
 
-## Flag personas given all this info 
+## Flag personas given all this info
 
 ```{r}
 resultsTidy %<>%
@@ -191,7 +191,7 @@ updates <- data.frame(
 resultsTidy %<>% dplyr::rows_update(updates, by = "Timestamp")
 ```
 
-## Assign persona categories and save data (contact willingness, timestamp, usertype etc) for each persona 
+## Assign persona categories and save data (contact willingness, timestamp, UserType etc) for each persona
 
 ```{r}
 # CLINICIANS

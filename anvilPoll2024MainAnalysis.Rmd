@@ -117,6 +117,7 @@ ggsave(here("plots/degree_furthersimplified_usertype.png")) #set plot size
 
 - Use this information (together with other info?) to try to cluster respondents/users into personas; see `PersonaStats.Rmd` 
 
+
 ### Prepare and plot the data
 
 <details><summary>Description of variable definitions and steps</summary>
@@ -320,7 +321,9 @@ PlotToolKnowledge_avg_score <-
   geom_point(aes(color = UserType, shape = AnVILorNo))
 
 
-PlotToolKnowledge_customization(PlotToolKnowledge_avg_score)
+PlotToolKnowledge_avg_score %<>% PlotToolKnowledge_customization()
+
+PlotToolKnowledge_avg_score
 
 ggsave(here("plots/tooldataresourcecomfortscore_singlepanel.png"), w = 2200, h = 1350, units = "px")
 ```
@@ -461,19 +464,15 @@ We adjust various aspects of the theme like turning off the grid and background 
 genomicsExpPlot <- ggplot(experienceDf, aes(x=experienceLevel,y=n, fill = experienceLevel)) +
   facet_grid(~researchType) +
   geom_bar(stat="identity") +
-  theme_bw() +
-  theme(panel.background = element_blank(), panel.grid = element_blank()) +
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
   geom_text(
     aes(label = after_stat(y), group = experienceLevel),
     stat = 'summary', fun = sum, vjust = -0.5, size=2
 ) +
-  ylab("Count") + xlab ("Reported Experience Level") +
   coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.05, "cm")) +
-  scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
-  theme(legend.position = "none")+
   ggtitle("How much experience do you have analyzing the following data categories?")
+
+genomicsExpPlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, ylabel = "Count", xlabel = "Reported Experience Level", rotate=55, hjustv = 1)
 
 genomicsExpPlot
 
@@ -482,7 +481,9 @@ ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")
 
 ## Experience: Controlled Access Datasets
 
-**Takeaway:** Over half of respondents report they are extremely interested in working with controlled access datasets.
+**Takeaway:** Generally, over half of respondents report they are extremely interested in working with controlled access datasets.
+
+For specific controlled access datasets ...
 
 - Of the survey provided choices, respondents have accessed or are particularly interested in accessing [All of Us](https://www.researchallofus.org/), [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data), and [GTEx](https://anvilproject.org/data/consortia/GTEx) (though All of Us and UK Biobank are not currently AnVIL hosted).
 - 2 respondents (moderately or extremely experienced with genomic data) specifically wrote in ["TCGA"](https://www.cancer.gov/ccg/research/genome-sequencing/tcga).
@@ -512,6 +513,40 @@ Since this is a select all that apply question, we expect that there will be mul
 </details>
 
 ### Prepare and plot the data
+
+<details><summary>Description of variable definitions and steps for preparing the data</summary>
+
+</details>
+
+```{r}
+dataInterest <- resultsTidy %>%
+  group_by(InterestControlledData) %>%
+  summarize(count = n())
+```
+
+<details><summary>Description of variable definitions and steps for preparing bar plot</summary>
+
+</details>
+
+```{r}
+dataInterestPlot <- dataInterest %>%
+  ggplot(aes(x = InterestControlledData,
+             y = count,
+             fill = as.factor(InterestControlledData))) +
+  geom_bar(stat="identity") +
+  ggtitle("How interested are you in working with controlled access datasets?") +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(1,1,1,1.1, "cm")) +
+  annotation_custom(textGrob("Extremely\ninterested", gp=gpar(fontsize=8, fontface = "bold")),xmin=5,xmax=5,ymin=-3.5,ymax=-3.5) +
+  annotation_custom(textGrob("Not at all\ninterested", gp=gpar(fontsize=8, fontface= "bold")),xmin=1,xmax=1,ymin=-3.5,ymax=-3.5) +
+  scale_y_continuous(breaks= pretty_breaks()) +
+  geom_text(aes(label = count, group = InterestControlledData),
+                vjust = -1, size=2)
+
+dataInterestPlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, xlabel = "Interest level", ylabel = "Count")
+
+dataInterestPlot
+```
 
 <details><summary>Description of variable definitions and steps for preparing the data</summary>
 
@@ -651,7 +686,9 @@ demoPlotRaw <- resultsTidy %>%
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
-stylize_bar(demoPlotRaw)
+demoPlotRaw %<>% stylize_bar()
+
+demoPlotRaw
 ```  
 
 #### Responses recoded to focus on awareness
@@ -666,8 +703,9 @@ demoPlot <- resultsTidy %>%
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
-stylize_bar(demoPlot) +
-  ylab("Awareness")
+demoPlot %<>% stylize_bar(ylabel = "Awareness")
+
+demoPlot
 ```
 
 ## Awareness: AnVIL Support Forum
@@ -716,7 +754,9 @@ forumPlotRaw <- ggplot(forumdf,
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
-stylize_bar(forumPlotRaw)
+forumPlotRaw %<>% stylize_bar()
+
+forumPlotRaw
 ```
 
 #### Responses recoded to focus on awareness
@@ -726,8 +766,9 @@ forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
-stylize_bar(forumPlot) +
-  ylab("Awareness")
+forumPlot %<>% stylize_bar(ylabel = "Awareness")
+
+forumPlot
 ```
 
 ## Preferences: Feature Importance Ranking
@@ -903,18 +944,10 @@ toPlotTrainingRanks <- bind_rows(
 tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingType, -avgRank))) +
   geom_line() +
   geom_point(aes(color = UserType), size = 3) +
-  theme(panel.background = element_blank()) + theme_bw() + theme(legend.position = "bottom") +
-  xlab("Average Rank") +
-  ylab("Training Workshop Modality") +
-  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.") +
-  scale_color_manual(values = c("#E0DD10", "#035C94")) +
-  theme(legend.title=element_blank()) +
-  scale_x_continuous(breaks = 5:1, labels = 5:1, limits = c(1,5))+
-  scale_x_reverse(limits = c(5,1)) +
-  annotation_custom(textGrob("Most\npreferred", gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
-  annotation_custom(textGrob("Least\npreferred", gp=gpar(fontsize=8, fontface= "bold")),xmin=-5,xmax=-5,ymin=-0.5,ymax=-0.5) +
-  coord_cartesian(clip = "off") +
-  theme(plot.margin = margin(1,1,1,1.1, "cm"))
+  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.")
+
+
+tdumbbell %<>% stylize_dumbbell(preference = TRUE, xlabel = "Average Rank", ylabel = "Training Workshop Modality", xmax=5)
 
 tdumbbell
 
@@ -955,8 +988,10 @@ whereRunPlot <- resultsTidy %>%
   geom_bar(stat="identity") +
   ggtitle("Where do you currently run analyses?")
 
-stylize_bar(whereRunPlot) +
-  ylab("Platform")
+whereRunPlot %<>% stylize_bar(ylabel = "Platform")
+
+whereRunPlot
+
 ```
 
 ## Preferences: DMS compliance/data repositories
@@ -1006,19 +1041,15 @@ toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "Whi
 
 ```{r}
 
-toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
+fundingSourcePlot <- toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
   geom_bar(position = "stack", stat = "identity") +
-  scale_fill_manual(values = c("#E0DD10", "#035C94")) +
-  theme_bw() +
-  ggtitle("What source(s) of funds do you use to pay for cloud computing?") +
-  xlab("Count") +
-  ylab("Funding Source") +
-  theme(panel.background = element_blank(),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.minor.y = element_blank(),
-        panel.grid.major.y = element_blank())
+  ggtitle("What source(s) of funds do you use to pay for cloud computing?")
 
-ggsave(here("plots/fundingsources.png")) #set save size
+fundingSourcePlot %<>% stylize_bar(ylabel="Funding Source")
+
+fundingSourcePlot
+
+ggsave(here("plots/fundingsources.png"), plot = fundingSourcePlot) #set save size
 ```
 
 ## Returning User: Length of Use of the AnVIL
@@ -1038,10 +1069,10 @@ timeUsePlot <- resultsTidy %>%
                   vjust = -1, size=2) +
   ggtitle("How long have you been using the AnVIL?")
 
-stylize_bar(timeUsePlot, usertypeColor = FALSE, singleColor = TRUE) +
-    xlab("Years of Use") +
-    ylab("Count") +
-    theme(legend.position = "none")
+timeUsePlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE, xlabel = "Years of Use", ylabel = "Count")
+
+timeUsePlot
+
 ```
 
 ## Returning User: Foreseeable Computational Needs
@@ -1065,8 +1096,9 @@ compNeedsPlot <- resultsTidy %>%
   geom_bar(stat = "identity") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
 
-  stylize_bar(compNeedsPlot, usertypeColor = FALSE, singleColor = TRUE) +
-    theme(legend.position = "none")
+compNeedsPlot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE)
+
+compNeedsPlot
 ```
 
 
@@ -1092,10 +1124,10 @@ recLikePlot <- resultsTidy %>%
   geom_text(aes(label = count, group = RecommendationLikelihood),
                   vjust = -1, size=2)
 
-  stylize_bar(recLikePlot, usertypeColor = FALSE, sequentialColor = TRUE) +
-    xlab("Recommendation likelihood") +
-    ylab("Count") +
-    theme(legend.position = "none")
+recLikePlot %<>% stylize_bar(usertypeColor = FALSE, sequentialColor = TRUE, xlabel = "Recommendation likelihood", ylabel = "Count")
+
+recLikePlot
+
 ```
 
 ## Session Info

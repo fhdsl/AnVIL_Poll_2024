@@ -115,7 +115,8 @@ ggsave(here("plots/degree_furthersimplified_usertype.png")) #set plot size
 
 **Potential Follow-ups:**
 
-- Use this information (togther with other info?) to try to cluster respondents/users into personas.
+- Use this information (together with other info?) to try to cluster respondents/users into personas; see `PersonaStats.Rmd` 
+
 
 ### Prepare and plot the data
 

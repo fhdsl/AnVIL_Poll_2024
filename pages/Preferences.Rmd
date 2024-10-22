@@ -23,7 +23,7 @@ gdumbbell
 
 ## Takeaways
 
-All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to returning users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
 
 ## Potential Follow-ups
 
@@ -39,7 +39,7 @@ tdumbbell
 
 ## Takeaway
 
-Both current and potential users vastly prefer virtual training workshops.
+Both returning and potential users vastly prefer virtual training workshops.
 
 <br/>
 
@@ -51,7 +51,7 @@ whereRunPlot
 
 ## Takeaways
 
-Institutional HPC and locally/personal computers are the most common responses. Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. We also see that potential users report using Galaxy (a free option) more than current users do.
+Institutional HPC and locally/personal computers are the most common responses. Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample. We also see that potential users report using Galaxy (a free option) more than returning users do.
 
 <br/>
 

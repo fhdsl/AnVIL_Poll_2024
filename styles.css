@@ -36,4 +36,10 @@
   background-color: RoyalBlue;
 }
 
+/* Footer */
 
+.footer {
+  font-family: "Lora", serif;
+  font-size: .85em;
+  color: #193a5c;
+}

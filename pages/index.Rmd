@@ -2,6 +2,7 @@
 title: "**About the AnVIL Community Poll**"
 output:
   html_document
+    after_body: resources/footer.html
 ---
 
 <br>
@@ -9,7 +10,7 @@ output:
 ### **Results Summary**
 
 - [*Identify User Type*](https://hutchdatascience.org/AnVIL_Poll_2024/IdentifyTypeOfUsers.html)
-  -  The majority of current users leverage AnVIL for ongoing projects. Potential users are evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
+  -  The majority of returning users leverage AnVIL for ongoing projects. Potential users are evenly split between never having used the AnVIL (but have heard of it) and having used AnVIL at some point previously.
 - [*Demographics*](https://hutchdatascience.org/AnVIL_Poll_2024/Demographics.html)
   - Most of the respondents have a PhD or are currently working on a PhD.
   - Many respondents do computational work.
@@ -23,10 +24,10 @@ output:
   - Most respondents are aware of AnVIL Demos, even if they haven't attended one.
   - Most respondents are aware of the AnVIL Support Forum, even if they haven't used it.
 - [*Preferences*](https://hutchdatascience.org/AnVIL_Poll_2024/Preferences.html)
-  - All respondents rank having specific tools or datasets supported/available as a very important feature for using the AnVIL (and this feature is ranked the highest by *current users*); *Potential users* rate having a free version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+  - All respondents rank having specific tools or datasets supported/available as a very important feature for using the AnVIL (and this feature is ranked the highest by *returning users*); *Potential users* rate having a free version with limited compute or storage as the most important feature for their potential use of the AnVIL.
   - All respondents prefer virtual training workshops over other training modalities.
-- [*Current Users*](https://hutchdatascience.org/AnVIL_Poll_2024/CurrentUserQs.html)
-  - *For current users*, the most common computational need is large amounts of storage.
+- [*Returning Users*](https://hutchdatascience.org/AnVIL_Poll_2024/CurrentUserQs.html)
+  - *For returning users*, the most common computational need is large amounts of storage.
   - Many users report they are "extremely likely" to recommend AnVIL, but we'd like to follow up with users who chose differently.
 
 Click on each tab to learn more.
@@ -35,9 +36,12 @@ Click on each tab to learn more.
 
 ### **Design**
 
-This user poll was conducted in Spring 2024, with the poll open for responses from February 15th to March 25th. 52 total responses were received, two of which were determined to be duplicate users, leaving a total of **50 user responses** used in the analysis. The following graphic shows the arrangement of questions. The first question was used to separate users into "Current" and "Potential" users. Demographics, experience, awareness, and preference related questions were asked of all users.
+This user poll was conducted in Spring 2024, with the poll open for responses from February 15th to March 25th. 52 total responses were received, two of which were determined to be duplicate users, leaving a total of **50 user responses** used in the analysis. The following graphic shows the arrangement of questions. The first question was used to separate users into "Returning" and "Potential" users. Demographics, experience, awareness, and preference related questions were asked of all users.
 
-![](https://raw.githubusercontent.com/fhdsl/AnVIL_Poll_2024/main/plots/AnVILPoll2024Flowchart.png)
+![](https://raw.githubusercontent.com/fhdsl/AnVIL_Poll_2024/main/plots/AnVILPoll2024Flowchart_returninglabel.png)
 
-A sample poll can be [downloaded here](https://drive.google.com/uc?export=download&id=1e8sG6-CXaVSiq8WbQEBvd3MTN6RJkWF0).
+<!---
+[Source](https://docs.google.com/presentation/d/1bP95r2ZwMkYSV4NxOeuHrOKbEOm8cdV5hwKFfLnH7yY/edit?usp=sharing)
+--->
 
+A sample poll can be [downloaded here](https://drive.google.com/uc?export=download&id=1e8sG6-CXaVSiq8WbQEBvd3MTN6RJkWF0).  

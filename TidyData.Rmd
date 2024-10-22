@@ -21,7 +21,7 @@ The google sheet we are reading in is stored in an AnVIL Google drive folder `St
 
 In this google sheet, each question is a column, and each response to the survey is a row. If the respondent wasn't asked or didn't answer a specific question, there is an NA in the corresponding row/column.
 
-```{r, echo=FALSE}
+```{r, eval=FALSE, echo=FALSE}
 gs4_auth(email = TRUE)
 ```
 

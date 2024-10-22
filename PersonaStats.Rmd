@@ -1,0 +1,327 @@
+---
+title: "Personas"
+author: "Kate Isaac"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(magrittr)
+```
+
+```{r}
+source(knitr::purl("TidyData.Rmd", quiet=TRUE)) # Intended for interactive analysis
+```
+
+```{r}
+kindOfWorkDF <-
+  resultsTidy %>%
+  select(Timestamp, KindOfWork) %>%
+  separate_longer_delim(KindOfWork, delim = ", ") %>%
+  mutate(
+    KindOfWork = recode(KindOfWork, "Program administration," = "Program administration", "computational education" = "Computational education"),
+    value = TRUE
+  ) %>%
+  pivot_wider(names_from = KindOfWork, values_from = value, values_fill = FALSE)
+```
+
+## Number of reported kinds of work description for each response
+
+add a column with the count of number of descriptions for each respondent and then use the table function to see how many responses gave 1, 2, 3, ... descriptions for their kind of work
+
+```{r}
+numSelected <- kindOfWorkDF %>%
+  select(!Timestamp) %>%
+  rowSums()
+
+numSelectedDF <- tibble("X" = numSelected) %>%
+  count(X) %>%
+  mutate(percentage_responses = round(n / nrow(resultsTidy) * 100, 0))
+
+numSelectedDF
+```
+
+## What were the most common single responses
+
+```{r}
+singleResponseRows <- which(rowSums(kindOfWorkDF[2:ncol(kindOfWorkDF)]) == 1) # these rows are responses where they only provided one description
+tibble("description" = unlist(lapply(1:length(singleResponseRows), function(x) colnames(kindOfWorkDF)[which(kindOfWorkDF[singleResponseRows[x], ] == TRUE)]))) %>% # for those rows, find the corresponding columns that are true and add the column names to a vector
+  count(description) %>% # count the number of times each of those descriptions is there
+  arrange(-n) # arrange in descending order
+```
+
+## What were the most common pairs of responses (no matter how many kinds of work descriptions were provided)
+
+Look at [this solution from stackoverflow to find pairs](https://stackoverflow.com/a/62374554), but it only works to find pairs that are right next to each other, ugh. So just wrote my own function.
+
+note that the first column of `kindOfWorkDF` is a timestamp and we don't want that one for this
+
+note also `combn` will also fail if there aren't enough non-NA values, so we want to only select rows with more than one description
+
+Given those two notes, pass this function the following input data frame
+
+`kindOfWorkDF[which(rowSums(kindOfWorkDF[,2:ncol(kindOfWorkDF)]) > 1),-c(1)]`
+
+```{r}
+find_pairs <- function(inputDF, rowOI) {
+  pairs <- c()
+  notNA_cols_combos <- t(combn(which(inputDF[rowOI, ] == TRUE), 2)) # rows will be indices for each pair
+  for (rowIndex in 1:nrow(notNA_cols_combos)) {
+    pairs <- c(pairs, paste0(unlist(colnames(inputDF)[notNA_cols_combos[rowIndex, ]]), collapse = "-"))
+  }
+  return(pairs)
+}
+```
+
+```{r}
+numSelectedDF %<>%
+  mutate(X = as.integer(X))
+
+kindOfWorkDF_subset <- kindOfWorkDF[which(rowSums(kindOfWorkDF[, 2:ncol(kindOfWorkDF)]) > 1), -c(1)]
+
+pairs_all <- unlist(lapply(
+  1:nrow(kindOfWorkDF_subset),
+  function(x) find_pairs(kindOfWorkDF_subset, x)
+)) %>%
+  as.data.frame() %>%
+  `colnames<-`(c("pairs")) %>%
+  group_by(pairs) %>%
+  mutate(count = n()) %>%
+  ungroup() %>%
+  distinct() %>%
+  arrange(-count) %>%
+  mutate(
+    percentage_notSingleDescription_responses =
+      round(count / sum(numSelectedDF[which(numSelectedDF$X > 1), "n"]) * 100, 0)
+  )
+print(pairs_all, n = nrow(pairs_all))
+```
+
+This percentage sums to greater than 100, but I think because the pairs are made whether there a respondent provided 2, 3, or 5 descriptions so there will be more pairs than responses that had pairs possible, so not sure if the percentage is helpful or not.
+
+## How many times was each description selected/reported
+
+```{r}
+numResponsesPerDescription <- data.frame("n" = colSums(kindOfWorkDF[, 2:ncol(kindOfWorkDF)])) %>%
+  arrange(-n)
+
+numResponsesPerDescription
+```
+
+## Flag personas given all this info
+
+```{r}
+resultsTidy %<>%
+  mutate(
+    clinical_flag = str_detect(KindOfWork, "Clinical"), # any clinical
+    compOnly_flag = (tolower(KindOfWork) == "computational work"), # only computational
+    education_flag = str_detect(KindOfWork, "education") # any education
+  )
+
+resultsTidy$decision_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) {
+  (all(
+    str_detect(
+      tolower(resultsTidy$KindOfWork[x]),
+      c(
+        "(project leadership|project management|program administration)",
+        "computational work"
+      )
+    )
+  ))
+})) # function of projects + making decisions
+resultsTidy$admin_flag <- unlist(lapply(1:nrow(resultsTidy), function(x) {
+  !any(str_detect(
+    tolower(resultsTidy$KindOfWork[x]), tolower(tolower(setdiff(
+      colnames(kindOfWorkDF)[2:(ncol(kindOfWorkDF) - 2)],
+      c(
+        "Project leadership",
+        "Project management",
+        "Program administration"
+      )
+    )))
+  ))
+})) # project steering or admin only (the project or program descriptions only)
+```
+
+### Which ones don't have an assigned persona?
+
+```{r}
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[, c(
+  "clinical_flag",
+  "compOnly_flag",
+  "education_flag",
+  "decision_flag",
+  "admin_flag"
+)]) == 0)]
+```
+
+### Which ones have more than one assigned persona and how do we pick one?
+
+```{r}
+resultsTidy$KindOfWork[which(rowSums(resultsTidy[, c(
+  "clinical_flag",
+  "compOnly_flag",
+  "education_flag",
+  "decision_flag",
+  "admin_flag"
+)]) == 2)]
+```
+
+First appears to be education while the second appears to be decision (because of the leadership and management being present or having education + more than 2 other descriptions)
+
+```{r}
+which_rows <- which(rowSums(resultsTidy[, c(
+  "clinical_flag",
+  "compOnly_flag",
+  "education_flag",
+  "decision_flag",
+  "admin_flag"
+)]) == 2)
+
+updates <- data.frame(
+  Timestamp =
+    c(resultsTidy$Timestamp[which_rows[1]], resultsTidy$Timestamp[which_rows[2]]),
+  education_flag =
+    c(TRUE, FALSE),
+  decision_flag =
+    c(FALSE, TRUE)
+)
+
+resultsTidy %<>% dplyr::rows_update(updates, by = "Timestamp")
+```
+
+## Assign persona categories and save data (contact willingness, timestamp, UserType etc) for each persona
+
+```{r}
+# CLINICIANS
+clinician_persona <- resultsTidy %>%
+  filter(clinical_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "Clinician"
+  ) %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+# ANALYSTS
+analyst_persona <- resultsTidy %>%
+  filter(compOnly_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "Analyst"
+  ) %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+# EDUCATORS
+educator_persona <- resultsTidy %>%
+  filter(education_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "Educator"
+  ) %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+# DECISION MAKERS/PIs?
+pi_persona <- resultsTidy %>%
+  filter(decision_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "PI"
+  ) %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+# ADMIN
+admin_persona <- resultsTidy %>%
+  filter(admin_flag == TRUE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "Admin"
+  ) %>%
+  select(UserType, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r}
+no_persona <- resultsTidy %>%
+  filter(clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE) %>%
+  group_by(UserType, ContactWillingness) %>%
+  mutate(
+    count = n(),
+    persona = "None Assigned"
+  ) %>%
+  select(UserType, KindOfWork, persona, ContactWillingness, count, Email, Timestamp) %>%
+  arrange(-count) %>%
+  distinct()
+```
+
+```{r, eval=FALSE}
+save(clinician_persona,
+  analyst_persona,
+  educator_persona,
+  pi_persona,
+  admin_persona,
+  no_persona,
+  file = here("data/persona_classifications.rdata")
+)
+```
+
+```{r}
+persona_df <- rbind(
+  clinician_persona,
+  analyst_persona,
+  educator_persona,
+  pi_persona,
+  admin_persona,
+  no_persona
+) %>% select(-count)
+```
+
+```{r}
+resultsTidy %<>%
+  mutate(
+    persona = case_when(
+      clinical_flag == TRUE ~ "Clinician",
+      compOnly_flag == TRUE ~ "Analyst",
+      education_flag == TRUE ~ "Educator",
+      decision_flag == TRUE ~ "PI",
+      admin_flag == TRUE ~ "Admin",
+      clinical_flag == FALSE & compOnly_flag == FALSE & education_flag == FALSE & decision_flag == FALSE & admin_flag == FALSE ~ "None assigned"
+    )
+  )
+```
+
+```{r, eval=FALSE}
+ssPersonas <- gs4_create(name = "StateOfTheAnVIL_ResponsesPersonas", sheets = c("Personas", "AllResultsWithPersonas"))
+```
+
+```{r, eval=FALSE}
+sheet_write(data = persona_df, ss = ssPersonas, sheet = "Personas")
+```
+
+```{r, eval=FALSE}
+sheet_write(data = resultsTidy, ss = ssPersonas, sheet = "AllResultsWithPersonas")
+```
+
+Couldn't figure out how to move the file from my drive to a shared drive as every path I tried gave me errors, so I manually moved it on google drive.

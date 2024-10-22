@@ -1,7 +1,7 @@
 ---
 title: "**About the AnVIL Community Poll**"
 output:
-  html_document
+  html_document:
     after_body: resources/footer.html
 ---
 

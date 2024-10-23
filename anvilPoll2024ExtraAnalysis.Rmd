@@ -590,22 +590,10 @@ pd1 / pd2
 
 ## Awareness: AnVIL Support Forum (supplemental)
 
-```{r}
-forumdf %<>% mutate(,
-        forumUse = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Have utilized",
-          forumInteractionDescription == "Answered someone's post" ~ "Have utilized",
-          forumInteractionDescription == "Read through others' posts" ~ "Have utilized",
-          forumInteractionDescription == "No but aware of" ~ "Have not utilized",
-          forumInteractionDescription == "No didn't know of" ~ "Have not utilized"
-        ), levels = c("Have not utilized", "Have utilized")))
-```
-
 ### Utilization
 
 ```{r}
-forumPlotUtil <- forumdf %>%
+forumPlotUtil <- resultsTidy %>%
   group_by(UserType, forumUse) %>%
   summarize(count = n()) %>%
   ggplot(aes(y=reorder(forumUse, count),
@@ -620,7 +608,7 @@ stylize_bar(forumPlotUtil)
 ### Awareness or Utilization Color rather than y-axis split
 
 ```{r}
-pf1 <- forumdf %>%
+pf1 <- resultsTidy %>%
   group_by(UserType, forumUse) %>%
   summarize(count = n()) %>%
   ggplot(aes(y=UserType,
@@ -633,11 +621,11 @@ pf1 <- forumdf %>%
   ylab(" ") +
   scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
   scale_x_continuous(breaks= pretty_breaks()) +
-  theme(legend.title = element_blank(), )
+  theme(legend.title = element_blank())
 ```
 
 ```{r}
-pf2 <- forumdf %>%
+pf2 <- resultsTidy %>%
   group_by(UserType, forumAwareness) %>%
   summarize(count = n()) %>%
   ggplot(aes(y=UserType,

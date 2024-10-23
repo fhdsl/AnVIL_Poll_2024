@@ -606,3 +606,36 @@ resultsTidy %<>%
 ```
 
 </details>
+
+## AnVIL Forum Awareness and Utilization
+
+The question asked was also pretty granular in describing awareness of and multiple, perhaps co-occurring ways of utilizing the support forum. We want to simplify each set of answers from a respondent to report a binary yes/no they are aware of the forum from the set of responses they selected.
+
+<details><summary>Question and possible answers</summary>
+
+> Have you ever read or posted in our AnVIL Support Forum? (Select all that apply)
+
+Possible answers include
+
+* Read through others' posts 
+* Posted in 
+* Answered someone's post 
+* No, but aware of 
+* No, didn't know of
+
+```{r}
+resultsTidy %<>%
+  mutate(forumAwareness = factor(
+    case_when(
+      str_detect(AnVILSupportForum, "aware of|Answered|Posted|Read") ~ "Aware of",
+      str_detect(AnVILSupportForum, "didn't know of") ~ "Not Aware of"
+    ), levels = c("Not Aware of", "Aware of")),
+         forumUse = factor(
+    case_when(
+      str_detect(AnVILSupportForum, "Answered|Posted|Read") ~ "Have/will utilize",
+      str_detect(AnVILSupportForum, "No, ") ~ "Have not utilized"
+    ), levels = c("Have not utilized", "Have/will utilize"))
+)
+```
+
+</details>

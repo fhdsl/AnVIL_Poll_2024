@@ -1,5 +1,5 @@
 ---
-title: "Current Users"
+title: "Returning Users"
 author: ""
 date: ""
 output: html_document
@@ -24,7 +24,7 @@ timeUsePlot
 
 ## Takeaway
 
-We observe a fairly even sampling of the current users with regards to the number of years they've been using the AnVIL
+We observe a fairly even sampling of the returning users with regards to the number of years they've been using the AnVIL
 
 <br>
 
@@ -36,7 +36,7 @@ compNeedsPlot
 
 ## Takeaway
 
-Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
+Of the `r nrow(resultsTidy %>% filter(UserType == "Returning User"))` returning users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
 
 ## Potential Follow-ups
 

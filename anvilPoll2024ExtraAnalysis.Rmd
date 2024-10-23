@@ -20,14 +20,13 @@ knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 
 *No supplements at this time*
 
-
 ## Demographics: Highest Degree (supplemental)
 
 <details><summary>Description of variable definitions and steps</summary>
 
-First we select the columns of interest from `resultsTidy`: `Degrees` and `UserType`. Then we use `group_by` in conjunction with `summarize( = n())` to add counts for how many of each combo are observed in the data. 
+First we select the columns of interest from `resultsTidy`: `Degrees` and `UserType`. Then we use `group_by` in conjunction with `summarize( = n())` to add counts for how many of each combo are observed in the data.
 
-Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (current or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
+Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (returning or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
 
 Used [this Stack Overflow post to label sums above the bars](https://stackoverflow.com/questions/30656846/draw-the-sum-value-above-the-stacked-bar-in-ggplot2)
 
@@ -39,15 +38,15 @@ The rest of the changes are related to theme and labels and making sure that the
 
 ```{r}
 resultsTidy %>%
-  group_by(Degrees, UserType) %>% 
+  group_by(Degrees, UserType) %>%
   summarize(n = n()) %>%
-  ggplot(aes(x = reorder(Degrees, -n, sum), 
-             y = n, 
+  ggplot(aes(x = reorder(Degrees, -n, sum),
+             y = n,
              fill = UserType
              )) +
       geom_bar(position = "stack", stat="identity") +
       geom_text(
-                  aes(label = after_stat(y), group = Degrees), 
+                  aes(label = after_stat(y), group = Degrees),
                   stat = 'summary', fun = sum, vjust = -1, size=2
                 ) +
       theme_classic() + theme(axis.text.x = element_text(angle = 45, hjust=1)) +
@@ -80,12 +79,12 @@ Let's make a bar chart that shows how many of each institution, colored by insti
 
 <details><summary>Description of variable definitions and steps</summary>
 
-We first prepare the data by selecting the columns of interest from `resultsTidy`: `InstitutionalAffiliation` and `InstitutionalType`. And we use the `group_by` and `summarize( = n())` functions to add a count (`InstitutionalCount`) for every InstitutionalAffiliation. We want to include the InstitutionalType in the group_by even though it's redundant for what we're displaying since we'll want to color by institution type. 
+We first prepare the data by selecting the columns of interest from `resultsTidy`: `InstitutionalAffiliation` and `InstitutionalType`. And we use the `group_by` and `summarize( = n())` functions to add a count (`InstitutionalCount`) for every InstitutionalAffiliation. We want to include the InstitutionalType in the group_by even though it's redundant for what we're displaying since we'll want to color by institution type.
 
 We then plot the data with the Affiliation on the y-axis (reordered by the count so largest count is on top),
-the count on the x-axis, and the fill color being the institutional type. 
+the count on the x-axis, and the fill color being the institutional type.
 
-We change some theme and label elements and add a grob annotation to specify how many unique institutions are represented in this graph. 
+We change some theme and label elements and add a grob annotation to specify how many unique institutions are represented in this graph.
 
 </details>
 
@@ -100,7 +99,7 @@ resultsTidy %>%
   ggtitle("What institution are you affiliated with?")+
   annotation_custom(textGrob(paste("There are\n", length(unique(resultsTidy$InstitutionalAffiliation))  ,"\nunique institutions"), gp=gpar(fontsize=8, fontface = "bold")),xmin=7,xmax=7,ymin=3,ymax=3) +
   coord_cartesian(clip = "off") +
-  theme_classic() + 
+  theme_classic() +
   xlab("Count")
 
 ggsave(here("plots/institutionalAffilition_allResponses.png"))
@@ -126,20 +125,20 @@ ggsave(here("plots/institutionalType_allResponses_colorUserType.png"))
 
 ```
 
-#### Just for Current/Returning Users
+#### Just for Returning Users
 
-The above plot was for all survey responses. Here we want to focus on institutions represented by just current users of AnVIL. 
+The above plot was for all survey responses. Here we want to focus on institutions represented by just returning users of AnVIL.
 
 <details><summary>Description of variable definitions and steps</summary>
 
-We first select rows/responses that are just from Current users. Then we prepare the data and plot following the same scheme as above.
+We first select rows/responses that are just from returning users. Then we prepare the data and plot following the same scheme as above.
 
 </details>
 
 
 ```{r}
 resultsTidy %>%
-  filter(UserType == "Current User") %>%
+  filter(UserType == "Returning User") %>%
   group_by(InstitutionalAffiliation, InstitutionalType) %>% summarize(InstitutionalCount = n()) %>%
   ggplot(aes(
     y = reorder(InstitutionalAffiliation, InstitutionalCount),
@@ -153,22 +152,22 @@ resultsTidy %>%
     panel.grid.major.y = element_blank()
   ) +
   ylab("Institutional Affiliation") + xlab("Count") +
-  ggtitle(bquote('Institutional Affilition for' ~ bold('Current User') ~ 'Respondents')) +
-  annotation_custom(textGrob(paste("There are\n", nrow(unique(resultsTidy[which(resultsTidy$UserType == "Current User"), "InstitutionalAffiliation"]))  ,"\nunique institutions"), gp=gpar(fontsize=8, fontface = "bold")),xmin=5.5,xmax=5.5,ymin=3,ymax=3) +
+  ggtitle(bquote('Institutional Affilition for' ~ bold('Returning User') ~ 'Respondents')) +
+  annotation_custom(textGrob(paste("There are\n", nrow(unique(resultsTidy[which(resultsTidy$UserType == "Returning User"), "InstitutionalAffiliation"]))  ,"\nunique institutions"), gp=gpar(fontsize=8, fontface = "bold")),xmin=5.5,xmax=5.5,ymin=3,ymax=3) +
   coord_cartesian(clip = "off")
 
-ggsave(here("plots/institutionalAffilition_currentUserResponses.png"))
+ggsave(here("plots/institutionalAffilition_returningUserResponses.png"))
 ```
 
-Taking a less granular approach, and just looking at institution type rather than names of institutions. Saving the plot into a variable so that we can combine it with the one for potential users later. 
+Taking a less granular approach, and just looking at institution type rather than names of institutions. Saving the plot into a variable so that we can combine it with the one for potential users later.
 
-Note that the x- and y-axis labels are turned off since this will be the top plot when combined, also simplified the title to just say Current Users. Turned off the legend.
+Note that the x- and y-axis labels are turned off since this will be the top plot when combined, also simplified the title to just say Returning Users. Turned off the legend.
 
 Also used `scale_fill_manual` to set specific colors for the institution types in order to sync colors for institution types in this and the potential users version (`institutionTypePotential`) (more info on this with that plot below).
 
 ```{r}
-institutionTypeCurrent <- resultsTidy %>%
-  filter(UserType == "Current User") %>%
+institutionTypeReturning <- resultsTidy %>%
+  filter(UserType == "Returning User") %>%
   group_by(InstitutionalType) %>% summarize(InstitutionalCount = n()) %>%
   ggplot(aes(
     y = reorder(InstitutionalType, InstitutionalCount),
@@ -182,9 +181,9 @@ institutionTypeCurrent <- resultsTidy %>%
     panel.grid.major.y = element_blank()
   ) +
   ylab("") +
-  xlab("Count") + 
+  xlab("Count") +
   #xlab("") +
-  ggtitle(bquote(bold("Current Users"))) +
+  ggtitle(bquote(bold("Returning Users"))) +
   coord_cartesian(clip = "off") +
   scale_fill_manual(values = c("R1 University" = "#FDB462",
                     "Research Center" = "#FCCDE5",
@@ -192,14 +191,14 @@ institutionTypeCurrent <- resultsTidy %>%
                     "R2 University" = "#B3DE69")) +
   theme(legend.position = "none")
 
-institutionTypeCurrent
+institutionTypeReturning
 
-#ggsave(here("plots/institutionalType_currentUserResponses.png"), plot = institutionTypeCurrent)
+#ggsave(here("plots/institutionalType_returningUserResponses.png"), plot = institutionTypeReturning)
 ```
 
 #### Just for Potential Users
 
-Here we want to focus on institutions represented by just potential users of AnVIL. 
+Here we want to focus on institutions represented by just potential users of AnVIL.
 
 <details><summary>Description of variable definitions and steps</summary>
 
@@ -226,16 +225,16 @@ resultsTidy %>%
   ggtitle(bquote('Institutional Affilition for' ~ bold('Potential User') ~ 'Respondents')) +
   annotation_custom(textGrob(paste("There are\n", nrow(unique(resultsTidy[which(resultsTidy$UserType == "Potential User"), "InstitutionalAffiliation"]))  ,"\nunique institutions"), gp=gpar(fontsize=8, fontface = "bold")),xmin=6,xmax=6,ymin=1.5,ymax=1.5) +
   coord_cartesian(clip = "off")
-  
+
 
 ggsave(here("plots/institutionalAffilition_potentialUserResponses.png"))
 ```
 
-Taking a less granular approach, and just looking at institution type rather than names of institutions. 
+Taking a less granular approach, and just looking at institution type rather than names of institutions.
 
-Wanted to sync the colors between the current and potential institutional types and so used the Set3 palette for scale_fill_brewer as it has 12 colors (and need 9 for current users) and it seemed more accessible than the Paired palette. To see the hex codes that were assigned to the shared institution types in this plot, I used the `scales` library and `brewer_pal(palette = "Set3")(9)`
+Wanted to sync the colors between the returning and potential institutional types and so used the Set3 palette for scale_fill_brewer as it has 12 colors (and need 9 for returning users) and it seemed more accessible than the Paired palette. To see the hex codes that were assigned to the shared institution types in this plot, I used the `scales` library and `brewer_pal(palette = "Set3")(9)`
 
-Turned off the y-axis label, but kept the x-axis label since this will be the bottom plot when combined with the current user version (`institutionTypeCurrent`). Also used `xlim` to sync the x-axis limits between the two. 
+Turned off the y-axis label, but kept the x-axis label since this will be the bottom plot when combined with the returning user version (`institutionTypeReturning`). Also used `xlim` to sync the x-axis limits between the two.
 
 Simplified the title to just be Potential Users. Turned off the legend.
 
@@ -268,12 +267,12 @@ institutionTypePotential
 #ggsave(here("plots/institutionalType_potentialUserResponses.png"), plot = institutionTypePotential)
 ```
 
-Combined the two plots for institutional type (`institutionTypeCurrent` and `institutionTypePotential`) using patchwork, stacking them on top of each other (`/`) and using `plot_layout` to set the heights since there are more institution types for Potential users than Current users and therefore want current users to be shorter than default.
+Combined the two plots for institutional type (`institutionTypeReturning` and `institutionTypePotential`) using patchwork, stacking them on top of each other (`/`) and using `plot_layout` to set the heights since there are more institution types for potential users than returning users and therefore want returning users to be shorter than default.
 
 
 ```{r}
-combined_plot <-  institutionTypePotential / institutionTypeCurrent + plot_layout(heights = unit(c(4, 2),'cm')) + plot_annotation("What institution are you affiliated with?")
-  
+combined_plot <-  institutionTypePotential / institutionTypeReturning + plot_layout(heights = unit(c(4, 2),'cm')) + plot_annotation("What institution are you affiliated with?")
+
 combined_plot
 
 ggsave(here("plots/institutionalType_facetedUserType.png"), plot = combined_plot)
@@ -293,7 +292,7 @@ ggsave(here("plots/institutionalType_facetedUserType.png"), plot = combined_plot
 
 # Provide a list of AnVIL only Tools
 AnVIL_only <-
-  setdiff(toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Current Users" &
+  setdiff(toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Returning Users" &
                                 toPlotToolKnowledgeSeparateBR$AnVILorNo == "On the AnVIL", ]$Tool,
           toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Potential Users", ]$Tool)
 
@@ -309,7 +308,7 @@ PlotToolKnowledge_potential_user_score <-
   ggplot(data = toPlotToolKnowledgeSeparateBR) +
   geom_point(data = toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Potential Users" | toPlotToolKnowledgeSeparateBR$Tool %in% AnVIL_only ,],
              aes(color = UserType, shape = AnVILorNo, y = reorder(Tool, ToolOrder), x = avgScore)) +
-  geom_point(data = toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Current Users",],
+  geom_point(data = toPlotToolKnowledgeSeparateBR[toPlotToolKnowledgeSeparateBR$UserType == "Returning Users",],
              aes(color = UserType, shape = AnVILorNo, y = Tool, x = avgScore))
 
 PlotToolKnowledge_customization(PlotToolKnowledge_potential_user_score)
@@ -322,11 +321,11 @@ ggsave(here("plots/tooldataresourcecomfortscore_singlepanel_by_potential_users.p
 #only separate from the AnVIL data
 
 simplerPlot <- toPlotToolKnowledge %>%
-  filter(AnVILorNo == "Separate from the AnVIL") %>% 
-  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(aes(color = UserType)) + 
-  geom_line() + 
-  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Tool or Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) + 
-  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-1,ymax=-1) + 
+  filter(AnVILorNo == "Separate from the AnVIL") %>%
+  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(aes(color = UserType)) +
+  geom_line() +
+  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Tool or Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) +
+  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-1,ymax=-1) +
   annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-1,ymax=-1) +
   coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.1, "cm"))+
@@ -347,23 +346,23 @@ toPlot_simplified <- toPlotToolKnowledge %>%
 onAnVIL <- toPlotToolKnowledge %>%
   filter(AnVILorNo == "On the AnVIL") %>%
   right_join(., toPlot_simplified,by = "Tool") %>%
-  bind_rows(., 
-            data.frame(Tool = "RStudio", 
+  bind_rows(.,
+            data.frame(Tool = "RStudio",
                        avgScore.x = toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),"avgScore"],
-                       UserType.x = "Current Users",
+                       UserType.x = "Returning Users",
                        AnVILorNo.x = "On the AnVIL"),
-            data.frame(Tool = "Bioconductor", 
+            data.frame(Tool = "Bioconductor",
                        avgScore.x = toPlotToolKnowledge[which(toPlotToolKnowledge$Tool == "Bioconductor & RStudio"),"avgScore"],
-                       UserType.x = "Current Users",
+                       UserType.x = "Returning Users",
                        AnVILorNo.x = "On the AnVIL")
             ) %>% drop_na(avgScore.x)
 ```
 
 
 ```{r}
-simplerPlot + geom_point(data = onAnVIL, aes(x=avgScore.x,y=Tool,colour="#C77CFF")) + 
-  scale_color_manual( 
-    values = c("#F8766D", "#00BFC4", "#C77CFF"), labels = c("Potential Users", "Current Users", "Current User Ratings\nfor related AnVIL tools")) + theme(legend.title = element_blank())
+simplerPlot + geom_point(data = onAnVIL, aes(x=avgScore.x,y=Tool,colour="#C77CFF")) +
+  scale_color_manual(
+    values = c("#F8766D", "#00BFC4", "#C77CFF"), labels = c("Potential Users", "Returning Users", "Returning User Ratings\nfor related AnVIL tools")) + theme(legend.title = element_blank())
 
 ggsave(here("plots/tools_comfortscore.png"))
 ```
@@ -373,9 +372,9 @@ ggsave(here("plots/tools_comfortscore.png"))
 
 toPlotToolKnowledge %>%
   filter(Tool == "DUOS" | Tool == "Access controlled access data" | Tool == "TDR" | Tool == "Terra Workspaces") %>%
-  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(colour = "#F8766D") + 
-  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Data Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) + 
-  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-0.35,ymax=-0.35) + 
+  ggplot(aes(y = reorder(Tool, avgScore), x=avgScore)) + geom_point(colour = "#F8766D") +
+  scale_x_continuous(breaks = 0:5, labels = 0:5, limits = c(0,5)) + ylab("Data Resource") + xlab("Average Knowledge or Comfort Score") + theme_bw() + theme(panel.background = element_blank(), panel.grid.minor.x = element_blank()) +
+  annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-0.35,ymax=-0.35) +
   annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-0.35,ymax=-0.35) +
   coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.1, "cm"))+
@@ -391,82 +390,82 @@ ggsave(here("plots/dataresources_comfortscore.png"))
 
 ## Experience: Genomics and Clinical Research Experience (supplemental)
 
-### Should we split current users vs potential users?
+### Should we split returning users vs potential users?
 
-Here we use two different plots to show that the distribution of experience level among these three research types is similar when comparing the distribution of current users vs potential users. In this first plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by research type. We stack the user type responses using `facet_wrap` and `nrow=2` as an argument within that. We use a `position="dodge"` to cluster the similar research type bars next to each other. And we use geom_text to label the bars with the actual count. This requires `group = researchType` within the `geom_text()` `aes()` and `position = position_dodge(width = 0.9)` within the general `geom_text()` function. 
+Here we use two different plots to show that the distribution of experience level among these three research types is similar when comparing the distribution of returning users vs potential users. In this first plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by research type. We stack the user type responses using `facet_wrap` and `nrow=2` as an argument within that. We use a `position="dodge"` to cluster the similar research type bars next to each other. And we use geom_text to label the bars with the actual count. This requires `group = researchType` within the `geom_text()` `aes()` and `position = position_dodge(width = 0.9)` within the general `geom_text()` function.
 
 We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels and using a minimal theme to turn off borders, and then turning off grids, etc.
 
 ```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=researchType)) + 
-  facet_wrap(~UserType, nrow=2) + 
-  geom_bar(stat="identity", position="dodge") + 
-  theme_minimal() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=researchType)) +
+  facet_wrap(~UserType, nrow=2) +
+  geom_bar(stat="identity", position="dodge") +
+  theme_minimal() +
+  theme(panel.background = element_blank(), panel.grid = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
   geom_text(
-    aes(label = n, group = researchType), 
+    aes(label = n, group = researchType),
     size=2, position = position_dodge(width = .9), vjust=-0.5
-) + 
+) +
   ylab("Count") + xlab ("Reported Experience Level") +
   coord_cartesian(clip = "off")
-  
+
 
 ggsave(here("plots/researchExperienceLevel_colorResearchType.png"))
 ```
 
-In this second plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by experience level. We stack the user type responses and separate out the research types into separate facets using `facet_grid`. And we use geom_text to label the bars with the actual count. This uses `group = experienceLevel` within the `geom_text()` `aes()`. 
+In this second plot, we have the experience level on the x-axis, the count on the y-axis, and color the bars by experience level. We stack the user type responses and separate out the research types into separate facets using `facet_grid`. And we use geom_text to label the bars with the actual count. This uses `group = experienceLevel` within the `geom_text()` `aes()`.
 
 We then also make some theme changes like rotating the x-axis tick labels and changing the y- and x- axis labels, expanding the left plot margin, and using a minimal theme to turn off borders, and then turning off grids, etc.
 
 ```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=experienceLevel)) + 
-  facet_grid(UserType~researchType) + 
-  geom_bar(stat="identity") + 
-  theme_classic() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+ggplot(experienceDf, aes(x=experienceLevel,y=n, fill=experienceLevel)) +
+  facet_grid(UserType~researchType) +
+  geom_bar(stat="identity") +
+  theme_classic() +
+  theme(panel.background = element_blank(), panel.grid = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
   geom_text(
     aes(label = n, group = experienceLevel), vjust = -1, size=2
-) + 
+) +
   ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") + 
+  coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.05, "cm")) +
   theme(legend.position = "none")
-  
+
 
 ggsave(here("plots/researchExperienceLevel_colorExperience.png"))
 ```
 
-Both of these give us confidence that current and potential user counts for reported experience level in these research areas show similar distributions. So we'll go ahead and plot it without splitting out `UserType`.
+Both of these give us confidence that returning and potential user counts for reported experience level in these research areas show similar distributions. So we'll go ahead and plot it without splitting out `UserType`.
 
 ### Alternate plot
 
 <details><summary>Description of variable definitions and steps</summary>
 
-This bar plot is the same as in the main analysis, but it doesn't use a fill for experience level. It has the experience level on the x-axis, the count on the y-axis. We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like UserType that we're not visualizing here. 
+This bar plot is the same as in the main analysis, but it doesn't use a fill for experience level. It has the experience level on the x-axis, the count on the y-axis. We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like UserType that we're not visualizing here.
 
-We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off. 
+We adjust various aspects of the theme like turning off the grid and background and rotating the x-tick labels and changing the x- and y-axis labels. We also slightly widen the left axis so that the tick labels aren't cut off.
 
 </details>
 
 ```{r}
-ggplot(experienceDf, aes(x=experienceLevel,y=n)) + 
-  facet_grid(~researchType) + 
-  geom_bar(stat="identity") + 
-  theme_bw() + 
-  theme(panel.background = element_blank(), panel.grid = element_blank()) + 
-  theme(axis.text.x = element_text(angle = 45, hjust=1)) + 
+ggplot(experienceDf, aes(x=experienceLevel,y=n)) +
+  facet_grid(~researchType) +
+  geom_bar(stat="identity") +
+  theme_bw() +
+  theme(panel.background = element_blank(), panel.grid = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) +
   geom_text(
-    aes(label = after_stat(y), group = experienceLevel), 
+    aes(label = after_stat(y), group = experienceLevel),
     stat = 'summary', fun = sum, vjust = -0.5, size=2
-) + 
+) +
   ylab("Count") + xlab ("Reported Experience Level") +
-  coord_cartesian(clip = "off") + 
+  coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1,1.05, "cm")) +
   theme(legend.position = "none")+
   ggtitle("How much experience do you have analyzing the following data categories?")
-  
+
 
 ggsave(here("plots/researchExperienceLevel_noColor_noUserTypeSplit.png"))
 ```
@@ -476,38 +475,38 @@ ggsave(here("plots/researchExperienceLevel_noColor_noUserTypeSplit.png"))
 A potential follow-up question we had from examining the results of the "Experience: Genomics and Clinical Research Experience" section was "What's the overlap like for those moderately or extremely experienced in these various categories? The results of that question follow.
 
 ```{r}
-resultsTidy %>% 
+resultsTidy %>%
   select(Timestamp, HumanGenomicExperience, HumanClinicalExperience, NonHumanGenomicExperience, UserType) %>%
-  pivot_longer(c(HumanGenomicExperience, 
-                 HumanClinicalExperience, 
-                 NonHumanGenomicExperience), 
-               names_to = "researchType", 
+  pivot_longer(c(HumanGenomicExperience,
+                 HumanClinicalExperience,
+                 NonHumanGenomicExperience),
+               names_to = "researchType",
                values_to = "experienceLevel") %>%
-  mutate(experienceLevel = 
-           factor(experienceLevel, 
-                  levels = c("Not at all experienced", 
-                             "Slightly experienced", 
-                             "Somewhat experienced", 
-                             "Moderately experienced", 
+  mutate(experienceLevel =
+           factor(experienceLevel,
+                  levels = c("Not at all experienced",
+                             "Slightly experienced",
+                             "Somewhat experienced",
+                             "Moderately experienced",
                              "Extremely experienced")),
          researchType = case_when(researchType == "HumanClinicalExperience" ~ "Human Clinical\nResearch",
                                   researchType == "HumanGenomicExperience" ~ "Human Genomic\nResearch",
                                   researchType == "NonHumanGenomicExperience" ~ "Non-human\nGenomic Research"),
          Timestamp = factor(Timestamp)) %>%
   ggplot(aes(y = factor(experienceLevel,
-                        levels = rev(c("Not at all experienced", 
-                                       "Slightly experienced", 
-                                       "Somewhat experienced", 
-                                       "Moderately experienced", 
-                                       "Extremely experienced"))), 
-             x = Timestamp, 
+                        levels = rev(c("Not at all experienced",
+                                       "Slightly experienced",
+                                       "Somewhat experienced",
+                                       "Moderately experienced",
+                                       "Extremely experienced"))),
+             x = Timestamp,
              fill = experienceLevel)) +
   geom_tile() +
   scale_fill_manual(values = c("#035C94","#035385","#024A77","#024168", "#02395B")) +
   theme_bw() +
   theme(axis.text.x=element_blank(),
         axis.ticks.x=element_blank(),
-        axis.text.y = element_blank(), 
+        axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         legend.position = "left") +
   ylab("") +
@@ -521,7 +520,7 @@ inputList <- list(ClinicalExperience = which(resultsTidy$clinicalFlag),
                   HumanGenomicsExperience = which(resultsTidy$humanGenomicFlag),
                   NonHumanGenomicsExperience = which(resultsTidy$nonHumanGenomicFlag))
 
-ggVennDiagram(inputList, 
+ggVennDiagram(inputList,
               category.names = c("Clinical\nExperience", "Human Genomics\nExperience", " Non-human Genomics Experience")) +
   scale_x_continuous(expand = expansion(mult = .2))
 ```
@@ -541,7 +540,7 @@ demoPlotUtil <- resultsTidy %>%
   summarize(count = n()) %>%
   ggplot(aes(y=reorder(AnVILDemoUse, count),
              x= count,
-             fill = UserType)) + 
+             fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?")
 
@@ -556,7 +555,7 @@ pd1 <- resultsTidy %>%
   summarize(count = n()) %>%
   ggplot(aes(y=UserType,
              x= count,
-             fill = AnVILDemoUse)) + 
+             fill = AnVILDemoUse)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?") +
   theme_classic() +
@@ -577,7 +576,7 @@ pd2 <- resultsTidy %>%
   geom_bar(stat = "identity") +
   #ggtitle("Have you attended a monthly AnVIL Demo?") +
   theme_classic() +
-  xlab("Count") + 
+  xlab("Count") +
   ylab(" ") +
   scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
   scale_x_continuous(breaks= pretty_breaks()) +
@@ -611,7 +610,7 @@ forumPlotUtil <- forumdf %>%
   summarize(count = n()) %>%
   ggplot(aes(y=reorder(forumUse, count),
              x= count,
-             fill = UserType)) + 
+             fill = UserType)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
@@ -626,7 +625,7 @@ pf1 <- forumdf %>%
   summarize(count = n()) %>%
   ggplot(aes(y=UserType,
              x= count,
-             fill = forumUse)) + 
+             fill = forumUse)) +
   geom_bar(stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   theme_classic() +
@@ -647,7 +646,7 @@ pf2 <- forumdf %>%
   geom_bar(stat = "identity") +
   #ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   theme_classic() +
-  xlab("Count") + 
+  xlab("Count") +
   ylab(" ") +
   scale_fill_manual(values = c("#25445A", "#7EBAC0")) +
   scale_x_continuous(breaks= pretty_breaks()) +
@@ -675,19 +674,19 @@ resultsTidy %>%
 We would expect a row sum of 21 if a 6, 5, 4, 3, 2, and 1 were selected. We see row sums ranging from  6 (ranking everything 1) to 24. Only 8 out of 28 responses have a row sum of 21 and even that doesn't guarantee that all choices received a unique ranking for those 8 responses (e.g., 3 2's, 1 4, 1 5 and 1 6 sum to 21). So this table is instead showing that 20 responses definitely did not use unique ranks for all 6 questions. Given that most of these observed sums are less than 21, people showed a bias towards ranking things as more important (closer to 1)
 
 ```{r}
-resultsTidy %>% 
-  select(starts_with("CurrentRank")) %>% 
+resultsTidy %>%
+  select(starts_with("ReturningRank")) %>%
   rowSums(na.rm = TRUE) %>%
   table() %>% as.data.frame()
 ```
 
 We again would expect a row sum of 21 if a 6, 5, 4, 3, 2, and 1 were selected. We see row sums ranging from  6 (ranking everything 1) to 26. Only 9 out of 22 responses have a row sum of 21 and even that doesn't guarantee that all choices received a unique ranking for those 9 responses (e.g., 3 2's, 1 4, 1 5 and 1 6 sum to 21). So this table is instead showing that 13 responses definitely did not use unique ranks for all 6 questions. Given that most of these observed sums are less than 21, people showed a bias towards ranking things as more important (closer to 1)
 
-We can visualize the numerical response bias where people tended to rate things as more important by creating a density plot of all rankings no matter the feature queried or 
+We can visualize the numerical response bias where people tended to rate things as more important by creating a density plot of all rankings no matter the feature queried or
 
 ```{r}
 resultsTidy %>%
-  select(starts_with(c("CurrentRank", "PotentialRank"))) %>%
+  select(starts_with(c("ReturningRank", "PotentialRank"))) %>%
   pivot_longer(cols = everything()) %>%
   drop_na() %>%
   ggplot(aes(x = value)) +
@@ -704,24 +703,24 @@ resultsTidy %>%
 
 <details><summary>Description of variable definitions and steps</summary>
 
-Here, we just want all of the numerical ranks in one column and we can have additional columns that describe if that rank was from a current or potential user and which feature it corresponds to.
+Here, we just want all of the numerical ranks in one column and we can have additional columns that describe if that rank was from a returning or potential user and which feature it corresponds to.
 
-So to make a dataframe `densitydf`, we 
+So to make a dataframe `densitydf`, we
 
-* start by selecting the columns of interest from `resultsTidy` using `select(starts_with(c("PotentialRank", "CurrentRank")))
-* tell it to take this "wide" dataframe and pivot it to a longer one where the values all go to a `value` column, and the column name associated with the value goes into a `name` column. 
-* drop rows that have na with `drop_na()` since as described earlier not every survey respondent was asked each question; e.g., if they were a current user they weren't asked as a potential user.
-* Then we `separate` the `name` column on the word "Rank" to remove the `name` column we just made but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Current" or "Potential", and the Features are listed in the code below, because...
+* start by selecting the columns of interest from `resultsTidy` using `select(starts_with(c("PotentialRank", "ReturningRank")))
+* tell it to take this "wide" dataframe and pivot it to a longer one where the values all go to a `value` column, and the column name associated with the value goes into a `name` column.
+* drop rows that have na with `drop_na()` since as described earlier not every survey respondent was asked each question; e.g., if they were a returning user they weren't asked as a potential user.
+* Then we `separate` the `name` column on the word "Rank" to remove the `name` column we just made but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Returning" or "Potential", and the Features are listed in the code below, because...
 * We then use a `case_when` within a `mutate()` to fill out those features so they're more informative and show the choices survey respondents were given.
-* we add another `case_when` within that `mutate` to add the word "Users" to the `Usertypes` column values. 
+* we add another `case_when` within that `mutate` to add the word "Users" to the `Usertypes` column values.
 
 </details>
 
 ```{r}
-densitydf <- resultsTidy %>% 
-    select(starts_with(c("PotentialRank", "CurrentRank"))) %>% pivot_longer(cols = everything()) %>% drop_na() %>%
+densitydf <- resultsTidy %>%
+    select(starts_with(c("PotentialRank", "ReturningRank"))) %>% pivot_longer(cols = everything()) %>% drop_na() %>%
   separate(name, c("Usertype", "Feature"), sep = "Rank", remove = TRUE) %>%
-    mutate(Feature = 
+    mutate(Feature =
                case_when(Feature == "EasyBillingSetup" ~ "Easy billing setup",
                          Feature == "FlatRateBilling" ~ "Flat-rate billing rather than use-based",
                          Feature == "FreeVersion" ~ "Free version with limited compute or storage",
@@ -729,7 +728,7 @@ densitydf <- resultsTidy %>%
                          Feature == "ToolsData" ~ "Specific tools or datasets are available/supported",
                          Feature == "CommunityAdoption" ~ "Greater adoption of the AnVIL by the scientific community"),
            Usertype =
-             case_when(Usertype == "Current" ~ "Current Users",
+             case_when(Usertype == "Returning" ~ "Returning Users",
                        Usertype == "Potential" ~ "Potential Users")
     )
 ```
@@ -743,7 +742,7 @@ We use the `densitydf` dataframe we just made and the x-axis is raw rank `value`
 
 Some theme things are changed, labels and titles added, and then we display and save that plot
 
-It also adds annotations (using [Grobs, explained in this Stack Overflow post answer](https://stackoverflow.com/a/31081162)) to specify which rank was "Most important" and which was "Least important". 
+It also adds annotations (using [Grobs, explained in this Stack Overflow post answer](https://stackoverflow.com/a/31081162)) to specify which rank was "Most important" and which was "Least important".
 
 And it increases the bottom margin so those grob annotations aren't cutoff
 
@@ -752,11 +751,11 @@ And it increases the bottom margin so those grob annotations aren't cutoff
 ```{r}
 ggplot(densitydf, aes(x=value, group = Feature, fill = Feature)) +
   facet_wrap(~Usertype, nrow = 2) +
-  geom_density(alpha=0.3) + 
+  geom_density(alpha=0.3) +
   theme_bw() + theme(panel.background = element_blank()) +
   xlab("Rank") + scale_x_continuous(breaks = 1:6, labels= 1:6, limits = c(1, 6)) +
   ggtitle("Rank the following features according to\ntheir importance to you as a potential user\nor for your continued use of the AnVIL")+
-  annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.85,ymax=-0.85) + 
+  annotation_custom(textGrob("Most\nimportant", gp=gpar(fontsize=8, fontface = "bold")),xmin=1,xmax=1,ymin=-0.85,ymax=-0.85) +
   annotation_custom(textGrob("Least\nimportant", gp=gpar(fontsize=8, fontface= "bold")),xmin=6,xmax=6,ymin=-0.85,ymax=-0.85) +
   coord_cartesian(clip = "off") +
   theme(plot.margin = margin(1,1,1.25,1, "cm"))
@@ -769,7 +768,7 @@ ggsave(here("plots/densityplot_rankfeatures.png"))
 
 We use the `densitydf` dataframe we just made, but we re-simplify the Features so that they'll fit in the legend. For the plot, the x-axis is raw rank `value` column values, and the y-axis shows the density. The different density curves are grouped and color filled based off of which feature they represent, and we use `facet_grid` to split the plot facets into two rows and 6 columns so that there's one row for each user type and one column per feature. We switch the row/y-axis labels over to the left (using `switch = "y"`) and remove the column/x-axis labels (using `theme(strip.background.x = element_blank(), strip.text.x = element_blank())`)
 
-We use the `unit()` function to create some margins, and then set the plot margins and legend position within another `theme()`. I used [this Stack Overflow post to find this method.](https://stackoverflow.com/questions/29808620/ggplot2-move-legend-to-corner-but-keep-it-in-margin) 
+We use the `unit()` function to create some margins, and then set the plot margins and legend position within another `theme()`. I used [this Stack Overflow post to find this method.](https://stackoverflow.com/questions/29808620/ggplot2-move-legend-to-corner-but-keep-it-in-margin)
 
 Some theme things are changed, labels and titles added, and then we display and save that plot
 
@@ -778,25 +777,25 @@ Some theme things are changed, labels and titles added, and then we display and 
 ```{r}
 margins = unit(c(1, 10, 1, 1), 'lines')
 
-densitydf %>% 
-  mutate(Feature = 
+densitydf %>%
+  mutate(Feature =
            case_when(Feature == "Easy billing setup" ~ "Easy billing setup",
                      Feature == "Flat-rate billing rather than use-based" ~ "Flat-rate billing",
                      Feature == "Free version with limited compute or storage" ~ "Free version",
                      Feature == "On demand support and documentation" ~ "Support & documentation",
                      Feature == "Specific tools or datasets are available/supported" ~ "Specific tools or datasets",
                      Feature == "Greater adoption of the AnVIL by the scientific community" ~ "More community adoption")
-        ) %>% 
+        ) %>%
   ggplot(aes(x=value, group = Feature, fill = Feature)) +
   facet_grid(Usertype~Feature, switch = "y") +
-  geom_density() + 
+  geom_density() +
   theme_bw() + theme(panel.background = element_blank()) + #theme(legend.position = "bottom") +
   theme(strip.background.x = element_blank(), strip.text.x = element_blank()) +
   theme(plot.margin=margins, legend.position=c(1.25, 0.5)) +
   xlab("Rank") + scale_x_continuous(breaks = 1:6, labels= 1:6, limits = c(1, 6)) +
   ggtitle("Rank the following features according to their importance to you as a\npotential user or for your continued use of the AnVIL")+
   coord_cartesian(clip = "off")
-  
+
 ggsave(here("plots/densityplot_rankfeatures_faceted.png"))
 ```
 
@@ -808,14 +807,14 @@ ggsave(here("plots/densityplot_rankfeatures_faceted.png"))
 
 For this, we want a data frame that gives counts for all of the ranks given to each feature by each UserType.
 
-To do this we 
+To do this we
 
-  * Select the relevant columns from `resultsTidy`, specifically using  `select(starts_with(c("PotentialRank", "CurrentRank")))`
+  * Select the relevant columns from `resultsTidy`, specifically using  `select(starts_with(c("PotentialRank", "ReturningRank")))`
   * tell it to take this "wide" dataframe and pivot it to a longer one (`pivot_longer`) where the values all go to a `value` column, and the column name associated with the value goes into a `name` column.
-  * drop rows that have na with `drop_na()` since as described earlier not every survey respondent was asked each question; e.g., if they were a current user they weren't asked as a potential user.
+  * drop rows that have na with `drop_na()` since as described earlier not every survey respondent was asked each question; e.g., if they were a returning user they weren't asked as a potential user.
   * group by the name (feature and UserType combined) and value (the rank) and have it count the number of that specific rank for each feature/UserType combo
   * rename the columns because it's getting confusing. name stays name, value changes to rank, and n is used for the count.
-  * Then we `separate` the `name` column on the word "Rank" to remove the `name` column but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Current" or "Potential", and the Features are listed in the code below, because...
+  * Then we `separate` the `name` column on the word "Rank" to remove the `name` column but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Returning" or "Potential", and the Features are listed in the code below, because...
   * We then use a `case_when` within a `mutate()` to fill out those features so they're more informative and show the choices survey respondents were given.
   * we add another `case_when` within that `mutate` to add the word "Users" to the `Usertypes` column values.
   * set the ranks to be a factor (treated like a categorical variable with a better color scheme instead of a continuous one if we didn't do this) with a specified level so that the most important rank is the first bar on the left when we plot.
@@ -823,14 +822,14 @@ To do this we
 </details>
 
 ```{r}
-countdf <- resultsTidy %>% 
-    select(starts_with(c("PotentialRank", "CurrentRank"))) %>% 
-  pivot_longer(cols = everything()) %>% 
-  drop_na() %>% 
-  group_by(name, value) %>% count() %>% 
+countdf <- resultsTidy %>%
+    select(starts_with(c("PotentialRank", "ReturningRank"))) %>%
+  pivot_longer(cols = everything()) %>%
+  drop_na() %>%
+  group_by(name, value) %>% count() %>%
   `colnames<-`(c("name", "rank", "n")) %>%
   separate(name, c("Usertype", "Feature"), sep = "Rank", remove = TRUE) %>%
-  mutate(Feature = 
+  mutate(Feature =
            case_when(Feature == "EasyBillingSetup" ~ "Easy billing setup",
                      Feature == "FlatRateBilling" ~ "Flat-rate billing rather than use-based",
                      Feature == "FreeVersion" ~ "Free version with limited compute or storage",
@@ -838,7 +837,7 @@ countdf <- resultsTidy %>%
                      Feature == "ToolsData" ~ "Specific tools or datasets are available/supported",
                      Feature == "CommunityAdoption" ~ "Greater adoption of the AnVIL by the scientific community"),
         Usertype =
-            case_when(Usertype == "Current" ~ "Current Users",
+            case_when(Usertype == "Returning" ~ "Returning Users",
                       Usertype == "Potential" ~ "Potential Users"),
         rank = factor(rank, levels = c(6:1))
     )
@@ -848,11 +847,11 @@ countdf <- resultsTidy %>%
 
 <details><summary>Description of variable definitions and steps</summary>
 
-Using the `countdf` dataframe that we just made, we have the count or `n` column on the x-axis, the `Feature` on the y-axis, and the fill of the bars to be the `rank` (categorical 1, 2, 3, 4, 5, 6). We facet wrap on UserType with two rows so that each facet represents a different UserType. 
+Using the `countdf` dataframe that we just made, we have the count or `n` column on the x-axis, the `Feature` on the y-axis, and the fill of the bars to be the `rank` (categorical 1, 2, 3, 4, 5, 6). We facet wrap on UserType with two rows so that each facet represents a different UserType.
 
-We use the `position = "fill"` argument in `geom_bar()` so that it's a percent stacked bar instead of raw counts (since current and potential users had a different number of respondents)
+We use the `position = "fill"` argument in `geom_bar()` so that it's a percent stacked bar instead of raw counts (since returning and potential users had a different number of respondents)
 
-We set the labels for the legend so that it specifies which rank is Least important and which is most important, and we reverse the order in the legend so 1 is on top on the legend. 
+We set the labels for the legend so that it specifies which rank is Least important and which is most important, and we reverse the order in the legend so 1 is on top on the legend.
 
 Finally we set labels and titles and change the theme a bit
 
@@ -889,9 +888,9 @@ ggsave(here("plots/stackedbarplot_rankfeatures.png"))
 ### Alternate plot
 
 ```{r}
-toPlotFundingSource %>% 
+toPlotFundingSource %>%
   mutate(UserType = case_when(
-    UserType == "Current User" ~ "Current",
+    UserType == "Returning User" ~ "Returning",
     UserType == "Potential User" ~ "Potential"
          ),
    whichFundingSource = factor(whichFundingSource, levels = rev(c("NHGRI", "Other NIH", "Institutional funds", "Foundation Grant", "NSF", "Only use free options", "Don't know")))
@@ -904,11 +903,11 @@ toPlotFundingSource %>%
   xlab("Fraction of responses") +
   ylab("User Type") +
   theme(panel.background = element_blank(),
-        panel.grid.minor.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.major.y = element_blank()) +
   labs(fill="Funding Source")
-  
+
 
 ggsave(here("plots/fundingsources_colorSource.png"))
 ```
@@ -930,4 +929,3 @@ ggsave(here("plots/fundingsources_colorSource.png"))
 ```{r}
 sessionInfo()
 ```
-

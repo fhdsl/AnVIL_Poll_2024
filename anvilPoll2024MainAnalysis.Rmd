@@ -719,28 +719,20 @@ forumdf <- resultsTidy %>%
                                          replacement= "No ")) %>%
   separate_longer_delim(AnVILSupportForum,
            delim = ", ") %>%
-  group_by(UserType, CurrentUsageDescription, AnVILSupportForum) %>%
+  group_by(UserType, AnVILSupportForum) %>%
   summarize(count = n()) %>%
   drop_na() %>%
-  mutate(forumInteractionDescription =
+  mutate(AnVILSupportForum =
            factor(AnVILSupportForum,
-                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
-        forumAwareness = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Aware of",
-          forumInteractionDescription == "Answered someone's post" ~ "Aware of",
-          forumInteractionDescription == "Read through others' posts" ~ "Aware of",
-          forumInteractionDescription == "No but aware of" ~ "Aware of",
-          forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
-        ), levels = c("Not Aware of", "Aware of"))
-)
+                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of"))
+         )
 ```
 
 #### Raw responses
 
 ```{r}
 forumPlotRaw <- ggplot(forumdf,
-                       aes(y = reorder(forumInteractionDescription, count),
+                       aes(y = reorder(AnVILSupportForum, count),
                            x = count,
                            fill = UserType)) +
   geom_bar(stat = "identity") +
@@ -754,8 +746,8 @@ forumPlotRaw
 #### Responses recoded to focus on awareness
 
 ```{r}
-forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) +
-  geom_bar(stat = "identity") +
+forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
+  geom_bar() +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness")

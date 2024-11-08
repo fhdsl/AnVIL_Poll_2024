@@ -35,12 +35,12 @@ This sub-folder contains all plots from the analysis (main and extra) in `.png` 
 
 The `.Rmd` files in this directory are the files that will be rendered to `html` files for the website. This specific behavior is specified in the `.github/workflows/render-site.yml` workflow file and the `resources/render.R` file. The `.Rmd` files within this subdirectory are
   * `index.Rmd` -- the home page of the website
-  * `IdentifyTypeOfUsers.Rmd` -- analysis for the first question of the poll that allowed us to identify respondents as either potential or current users of the AnVIL.
+  * `IdentifyTypeOfUsers.Rmd` -- analysis for the first question of the poll that allowed us to identify respondents as either potential or returning users of the AnVIL.
   * `Demographics.Rmd` -- analysis for "demographics" related poll questions
   * `Experience.Rmd` -- analysis for "experience" related poll questions
   * `Awareness.Rmd` -- analysis for "awareness" related poll questions
   * `Preferences.Rmd` -- analysis for "preference" related poll questions
-  * `CurrentUserQs.Rmd` -- analysis for poll questions asked only to current AnVIL users
+  * `CurrentUserQs.Rmd` -- analysis for poll questions asked only to returning AnVIL users
   * `contact.Rmd` -- contact information displayed on the website
 
 This directory also contains the `_site.yml` file which defines what pages are where, etc. for the site.

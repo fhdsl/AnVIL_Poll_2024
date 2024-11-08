@@ -128,26 +128,23 @@ Note: Can I bring what we used within the persona's work over here to make this 
 
 ```{r}
 dfForPlotKOW <- resultsTidy %>%
-  separate(KindOfWork,
-           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
-           sep=", ", fill="right") %>%
-  pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
-  select(Timestamp, UserType, whichWorkDescription) %>%
-  mutate(whichWorkDescription =
-           recode(whichWorkDescription,
+  separate_longer_delim(KindOfWork,
+           delim=", ") %>%
+  select(Timestamp, UserType, KindOfWork) %>%
+  mutate(KindOfWork =
+           recode(KindOfWork,
                   "computational education" = "Computational education",
                   "Program administration," = "Program administration"),
-         whichWorkDescription = factor(whichWorkDescription),
+         KindOfWork = factor(KindOfWork),
          Timestamp = factor(Timestamp)
-         ) %>%
-  drop_na()
+         )
 
-factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
+factorLevel <-  as.data.frame(table(dfForPlotKOW$KindOfWork)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
 
 kowPlot <- ggplot(dfForPlotKOW,
        aes(x = Timestamp,
-           y = factor(whichWorkDescription, levels = factorLevel),
-           fill = whichWorkDescription
+           y = factor(KindOfWork, levels = factorLevel),
+           fill = KindOfWork
            )) +
   geom_tile() +
   theme_bw() +
@@ -208,11 +205,9 @@ ggsave(here("plots/institutionalType_simplified_allResponses_colorUserType.png")
 ```{r}
 consortiaTable <- resultsTidy %>%
   mutate(ConsortiaAffiliations = str_replace_all(ConsortiaAffiliations, c(";|&| and"), ",")) %>%
-  separate(ConsortiaAffiliations,
-           c("whichConsortiumA", "whichConsortiumB", "whichConsortiumC", "whichConsortiumD"),
-           sep=", ", fill = "right") %>%
-  pivot_longer(starts_with("whichConsortium"), values_to = "whichConsortiumName") %>%
-  group_by(whichConsortiumName) %>%
+  separate_longer_delim(ConsortiaAffiliations,
+           delim=", ") %>%
+  group_by(ConsortiaAffiliations) %>%
   summarize(count = n()) %>%
   drop_na() %>%
   arrange(count)
@@ -226,7 +221,7 @@ consortiaTable <- resultsTidy %>%
 ```{r, message = FALSE, echo = FALSE}
 consortia_df <-
   consortiaTable[which(consortiaTable$count >1),] %>%
-  rename(`consortium` = whichConsortiumName)
+  rename(`consortium` = ConsortiaAffiliations)
 
 kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
 ```
@@ -722,33 +717,22 @@ forumdf <- resultsTidy %>%
   mutate(AnVILSupportForum = str_replace(AnVILSupportForum,
                                          pattern = "No, ",
                                          replacement= "No ")) %>%
-  separate(AnVILSupportForum,
-           c("forumInteractionA", "forumInteractionB", "forumInteractionC"),
-           sep = ", ",
-           fill = "right") %>%
-  pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
-  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>%
+  separate_longer_delim(AnVILSupportForum,
+           delim = ", ") %>%
+  group_by(UserType, AnVILSupportForum) %>%
   summarize(count = n()) %>%
   drop_na() %>%
-  mutate(forumInteractionDescription =
-           factor(forumInteractionDescription,
-                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
-        forumAwareness = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Aware of",
-          forumInteractionDescription == "Answered someone's post" ~ "Aware of",
-          forumInteractionDescription == "Read through others' posts" ~ "Aware of",
-          forumInteractionDescription == "No but aware of" ~ "Aware of",
-          forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
-        ), levels = c("Not Aware of", "Aware of"))
-)
+  mutate(AnVILSupportForum =
+           factor(AnVILSupportForum,
+                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of"))
+         )
 ```
 
 #### Raw responses
 
 ```{r}
 forumPlotRaw <- ggplot(forumdf,
-                       aes(y = reorder(forumInteractionDescription, count),
+                       aes(y = reorder(AnVILSupportForum, count),
                            x = count,
                            fill = UserType)) +
   geom_bar(stat = "identity") +
@@ -762,8 +746,8 @@ forumPlotRaw
 #### Responses recoded to focus on awareness
 
 ```{r}
-forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) +
-  geom_bar(stat = "identity") +
+forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
+  geom_bar() +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness")
@@ -965,12 +949,10 @@ ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot 
 
 ```{r}
 whereRunPlot <- resultsTidy %>%
-  separate(WhereAnalysesRun,
-           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"),
-           sep = ", ", fill = "right") %>%
-  pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
-  mutate(wherePlatforms =
-           recode(wherePlatforms,
+  separate_longer_delim(WhereAnalysesRun,
+           delim = ", ") %>%
+  mutate(WhereAnalysesRun =
+           recode(WhereAnalysesRun,
                   "Amazon Web Services (AWS)" = "AWS",
                   "Galaxy (usegalaxy.org)" = "Galaxy",
                   "Galaxy Australia" = "Galaxy",
@@ -979,11 +961,10 @@ whereRunPlot <- resultsTidy %>%
                   "Personal computer (locally)," = "Personal computer (locally)",
                   "local server" = "Institutional HPC")
          ) %>%
-  group_by(UserType, wherePlatforms) %>%
+  group_by(UserType, WhereAnalysesRun) %>%
   summarize(count = n()) %>%
-  drop_na() %>%
   ggplot(aes(x = count,
-             y = reorder(wherePlatforms, count),
+             y = reorder(WhereAnalysesRun, count),
              fill = UserType)) +
   geom_bar(stat="identity") +
   ggtitle("Where do you currently run analyses?")
@@ -1029,10 +1010,10 @@ Answers are stored in the `FundingSources` column. This question was a select al
 </details>
 
 ```{r}
-toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG"), sep = ", ", fill="right") %>%
-  pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichFundingSource") %>%
-  drop_na(whichFundingSource) %>%
-  group_by(whichFundingSource, UserType) %>% summarize(count = n())
+toPlotFundingSource <- resultsTidy %>%
+  separate_longer_delim(FundingSources, delim = ", ") %>%
+  group_by(FundingSources, UserType) %>%
+  summarize(count = n())
 ```
 
 <details><summary> Plot the data variable definition and steps </summary>
@@ -1041,7 +1022,10 @@ toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "Whi
 
 ```{r}
 
-fundingSourcePlot <- toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
+fundingSourcePlot <- toPlotFundingSource %>%
+  ggplot(aes(y = reorder(FundingSources,count),
+             x = count,
+             fill = UserType)) +
   geom_bar(position = "stack", stat = "identity") +
   ggtitle("What source(s) of funds do you use to pay for cloud computing?")
 
@@ -1081,17 +1065,15 @@ timeUsePlot
 
 ```{r}
 compNeedsPlot <- resultsTidy %>%
-  separate(NeededResources,
-           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
-           sep = ", ", fill = "right") %>%
-  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
-  group_by(ResourceDescription) %>%
+  separate_longer_delim(NeededResources,
+           delim = ", ") %>%
+  group_by(NeededResources) %>%
   summarize(count = n()) %>%
   drop_na() %>%
   ggplot(aes(x = count,
-             y = reorder(ResourceDescription, count),
+             y = reorder(NeededResources, count),
              fill = "#25445A")) +
-  geom_text(aes(label = count, group = ResourceDescription),
+  geom_text(aes(label = count, group = NeededResources),
                   hjust = -1, size=2) +
   geom_bar(stat = "identity") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")

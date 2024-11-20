@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 ## Identify User Type
 
-**Takeaway:** Of the ```r nrow(resultsTidy)``` responses, ```r nrow(resultsTidy %>% filter(UserType == "CurrentUser"))``` were current users and ```r nrow(resultsTidy %>% filter(UserType == "PotentialUser"))``` were potential users. The majority of current users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
+**Takeaway:** Of the ```r nrow(resultsTidy)``` responses, ```r nrow(resultsTidy %>% filter(UserType == "Returning User"))``` were returning users and ```r nrow(resultsTidy %>% filter(UserType == "Potential User"))``` were potential users. The majority of returning users belonged to the group who use the AnVIL for ongoing projects while the majority of potential users were evenly split between those who have never used the AnVIL (but have heard of it) and those who used to previously use the AnVIL, but don't currently.
 
 **Potential Follow-ups:**
 
@@ -75,7 +75,7 @@ ggsave(here("plots/respondent_usagedescription.png"), plot = typeOfUserPlot) #se
 
 First we use `group_by()` to select`Degrees` and `UserType` in conjunction with `summarize( = n())` to add counts for how many of each combo are observed in the data.
 
-Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (current or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
+Then we send this data to ggplot and make a bar chart with the x-axis representing the degrees (`reorder`ed by the count number such that higher counts are first (and the sum) because otherwise the 2 MDs are located after the high school and master's in progress bars (1 each)). The y-axis represents the count, and the fill is used to specify user type (returning or potential AnVIL users). We use a stacked bar chart and include labels above each bar of the total sum for that degree type.
 
 Used [this Stack Overflow post to label sums above the bars](https://stackoverflow.com/questions/30656846/draw-the-sum-value-above-the-stacked-bar-in-ggplot2)
 
@@ -115,7 +115,7 @@ ggsave(here("plots/degree_furthersimplified_usertype.png")) #set plot size
 
 **Potential Follow-ups:**
 
-- Use this information (together with other info?) to try to cluster respondents/users into personas; see `PersonaStats.Rmd` 
+- Use this information (together with other info?) to try to cluster respondents/users into personas; see `PersonaStats.Rmd`
 
 
 ### Prepare and plot the data
@@ -128,26 +128,23 @@ Note: Can I bring what we used within the persona's work over here to make this 
 
 ```{r}
 dfForPlotKOW <- resultsTidy %>%
-  separate(KindOfWork,
-           c("whichWorkA", "whichWorkB", "whichWorkC", "whichWorkD", "whichWorkE", "whichWorkF", "whichWorkG", "whichWorkH", "whichWorkI", "whichWorkJ"),
-           sep=", ", fill="right") %>%
-  pivot_longer(starts_with("whichWork"), values_to = "whichWorkDescription") %>%
-  select(Timestamp, UserType, whichWorkDescription) %>%
-  mutate(whichWorkDescription =
-           recode(whichWorkDescription,
+  separate_longer_delim(KindOfWork,
+           delim=", ") %>%
+  select(Timestamp, UserType, KindOfWork) %>%
+  mutate(KindOfWork =
+           recode(KindOfWork,
                   "computational education" = "Computational education",
                   "Program administration," = "Program administration"),
-         whichWorkDescription = factor(whichWorkDescription),
+         KindOfWork = factor(KindOfWork),
          Timestamp = factor(Timestamp)
-         ) %>%
-  drop_na()
+         )
 
-factorLevel <-  as.data.frame(table(dfForPlotKOW$whichWorkDescription)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
+factorLevel <-  as.data.frame(table(dfForPlotKOW$KindOfWork)) %>% arrange(-Freq) %>% select(Var1) %>% unlist() %>% unname() %>% rev()
 
 kowPlot <- ggplot(dfForPlotKOW,
        aes(x = Timestamp,
-           y = factor(whichWorkDescription, levels = factorLevel),
-           fill = whichWorkDescription
+           y = factor(KindOfWork, levels = factorLevel),
+           fill = KindOfWork
            )) +
   geom_tile() +
   theme_bw() +
@@ -208,11 +205,9 @@ ggsave(here("plots/institutionalType_simplified_allResponses_colorUserType.png")
 ```{r}
 consortiaTable <- resultsTidy %>%
   mutate(ConsortiaAffiliations = str_replace_all(ConsortiaAffiliations, c(";|&| and"), ",")) %>%
-  separate(ConsortiaAffiliations,
-           c("whichConsortiumA", "whichConsortiumB", "whichConsortiumC", "whichConsortiumD"),
-           sep=", ", fill = "right") %>%
-  pivot_longer(starts_with("whichConsortium"), values_to = "whichConsortiumName") %>%
-  group_by(whichConsortiumName) %>%
+  separate_longer_delim(ConsortiaAffiliations,
+           delim=", ") %>%
+  group_by(ConsortiaAffiliations) %>%
   summarize(count = n()) %>%
   drop_na() %>%
   arrange(count)
@@ -226,14 +221,14 @@ consortiaTable <- resultsTidy %>%
 ```{r, message = FALSE, echo = FALSE}
 consortia_df <-
   consortiaTable[which(consortiaTable$count >1),] %>%
-  rename(`consortium` = whichConsortiumName)
+  rename(`consortium` = ConsortiaAffiliations)
 
 kableExtra::kable(consortia_df, table.attr = "style='width:20%;'")
 ```
 
 ## Experience: Tool & Resource Knowledge/Comfort level
 
-**Takeaway:** Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users report similar comfort levels.
+**Takeaway:** Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to returning users. Where tools were present on and off AnVIL, returning users report similar comfort levels.
 
 Overall, there is less comfort with containers or workflows than using various programming languages and integrated development environments (IDEs).
 
@@ -241,24 +236,24 @@ Overall, there is less comfort with containers or workflows than using various p
 
 <details><summary>Description of variable definitions and steps for preparing the data </summary>
 
-We bind the rows of two dataframes, one for current users and one for potential users. The steps for building the dataframes are essentially the same once the first `filter` and `mutate` steps are completed. The first step of building each data frame is to filter based on the `UserType` of interest. We then select the columns that start with "Score_" or "Score_AllTech" that we created in `TidyData.Rmd`. For potential users, we only need the "Score_AllTech" columns, not the "Score_CurrentAnVILTech" columns as well. Because the scores are integers and we want to sum the scores across responses, we use a column sum function and send those sums to a data frame where the rowname is the previous column name and the summed scores are stored in the `totalScore` column. We add columns `nscores`, `avgScore`, and `UserType` that store the number of responses or scores, the average score (total divided by number of), and the applicable type of user. Rownames are then moved to a column called `WhereTool` and this column is separated into two separate columns, separating on the word "Tech" Such that the new `AnVILorNo` column will contain either "Score_All" or "Score_CurrentAnVIL". We translate those to be "Separate from the AnVIL" or "On the AnVIL" respectively. And the new "Tool" column will contain the shorthand tool names which we recode to add spaces or more info.   
+We bind the rows of two dataframes, one for returning users and one for potential users. The steps for building the dataframes are essentially the same once the first `filter` and `mutate` steps are completed. The first step of building each data frame is to filter based on the `UserType` of interest. We then select the columns that start with `Score_` or `Score_AllTech` that we created in `TidyData.Rmd`. For potential users, we only need the `Score_AllTech` columns, not the `Score_ReturningAnVILTech` columns as well. Because the scores are integers and we want to sum the scores across responses, we use a column sum function and send those sums to a data frame where the rowname is the previous column name and the summed scores are stored in the `totalScore` column. We add columns `nscores`, `avgScore`, and `UserType` that store the number of responses or scores, the average score (total divided by number of), and the applicable type of user. Rownames are then moved to a column called `WhereTool` and this column is separated into two separate columns, separating on the word "Tech" Such that the new `AnVILorNo` column will contain either `Score_All` or `Score_ReturningAnVIL`. We translate those to be "Separate from the AnVIL" or "On the AnVIL" respectively. And the new `Tool` column will contain the shorthand tool names which we recode to add spaces or more info.   
 
 </details>
 
 ```{r}
 toPlotToolKnowledge <- bind_rows(
   resultsTidy %>%
-    filter(UserType == "Current User") %>%
+    filter(UserType == "Returning User") %>%
     select(starts_with("Score_")) %>%
     colSums() %>%
     as.data.frame() %>% `colnames<-`(c("totalScore")) %>%
-    mutate(nscores = sum(resultsTidy$UserType == "Current User"),
+    mutate(nscores = sum(resultsTidy$UserType == "Returning User"),
           avgScore = totalScore / nscores,
-          UserType = "Current Users") %>%
+          UserType = "Returning Users") %>%
   mutate(WhereTool = rownames(.)) %>%
   separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
   mutate(AnVILorNo =
-           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
+           case_when(AnVILorNo == "Score_ReturningAnVIL" ~ "On the AnVIL",
                      AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
                      ),
          Tool =
@@ -281,7 +276,7 @@ toPlotToolKnowledge <- bind_rows(
     mutate(WhereTool = rownames(.)) %>%
     separate(WhereTool, c("AnVILorNo", "Tool"), sep = "Tech", remove = TRUE) %>%
     mutate(AnVILorNo =
-           case_when(AnVILorNo == "Score_CurrentAnVIL" ~ "On the AnVIL",
+           case_when(AnVILorNo == "Score_ReturningAnVIL" ~ "On the AnVIL",
                      AnVILorNo == "Score_All" ~ "Separate from the AnVIL"
                      ),
            Tool =
@@ -294,7 +289,7 @@ toPlotToolKnowledge <- bind_rows(
                   )
           )
 ) %>%
-  mutate(UserType = factor(UserType, levels = c("Potential Users", "Current Users")))
+  mutate(UserType = factor(UserType, levels = c("Potential Users", "Returning Users")))
 ```
 
 ```{r}
@@ -452,7 +447,7 @@ experienceDf <- resultsTidy %>% select(HumanGenomicExperience, HumanClinicalExpe
 
 <details><summary>Description of variable definitions and steps for plotting the bar graph</summary>
 
-We didn't observe big differences between current and potential users, so we believe this grouped plot is useful for understanding the community as a whole.
+We didn't observe big differences between returning and potential users, so we believe this grouped plot is useful for understanding the community as a whole.
 
 This bar plot has the experience level on the x-axis, the count on the y-axis, and fills the bars according to the experience level (though the fill/color legend is turned off by setting legend.position to none). We facet the research category type and label the bars. We keep a summary stat and sum function and after_stat(y) for the label since the data has splits like `UserType` that we're not visualizing here.
 
@@ -670,7 +665,7 @@ ggsave(here("plots/whichcontrolleddata_nonhumangenomic.png"), plot = nonHumanGen
 
 ## Awareness: Monthly AnVIL Demos
 
-**Takeaway:** Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users.
+**Takeaway:** Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both returning and potential AnVIL users.
 
 ### Prepare and plot the data
 
@@ -712,7 +707,7 @@ demoPlot
 
 **Takeaway:** Most respondents have not used the AnVIL support forum.
 
-- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users.
+- We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and returning users.
 - While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
 
 ### Prepare and plot the data
@@ -722,33 +717,22 @@ forumdf <- resultsTidy %>%
   mutate(AnVILSupportForum = str_replace(AnVILSupportForum,
                                          pattern = "No, ",
                                          replacement= "No ")) %>%
-  separate(AnVILSupportForum,
-           c("forumInteractionA", "forumInteractionB", "forumInteractionC"),
-           sep = ", ",
-           fill = "right") %>%
-  pivot_longer(starts_with("forumInteraction"), values_to = "forumInteractionDescription") %>%
-  group_by(UserType, CurrentUsageDescription, forumInteractionDescription) %>%
+  separate_longer_delim(AnVILSupportForum,
+           delim = ", ") %>%
+  group_by(UserType, AnVILSupportForum) %>%
   summarize(count = n()) %>%
   drop_na() %>%
-  mutate(forumInteractionDescription =
-           factor(forumInteractionDescription,
-                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of")),
-        forumAwareness = factor(
-          case_when(
-          forumInteractionDescription == "Posted in" ~ "Aware of",
-          forumInteractionDescription == "Answered someone's post" ~ "Aware of",
-          forumInteractionDescription == "Read through others' posts" ~ "Aware of",
-          forumInteractionDescription == "No but aware of" ~ "Aware of",
-          forumInteractionDescription == "No didn't know of" ~ "Not Aware of"
-        ), levels = c("Not Aware of", "Aware of"))
-)
+  mutate(AnVILSupportForum =
+           factor(AnVILSupportForum,
+                  levels = c("Posted in", "Answered someone's post", "Read through others' posts", "No but aware of", "No didn't know of"))
+         )
 ```
 
 #### Raw responses
 
 ```{r}
 forumPlotRaw <- ggplot(forumdf,
-                       aes(y = reorder(forumInteractionDescription, count),
+                       aes(y = reorder(AnVILSupportForum, count),
                            x = count,
                            fill = UserType)) +
   geom_bar(stat = "identity") +
@@ -762,8 +746,8 @@ forumPlotRaw
 #### Responses recoded to focus on awareness
 
 ```{r}
-forumPlot <- ggplot(forumdf, aes(y = forumAwareness, x = count, fill = UserType)) +
-  geom_bar(stat = "identity") +
+forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
+  geom_bar() +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness")
@@ -773,7 +757,7 @@ forumPlot
 
 ## Preferences: Feature Importance Ranking
 
-**Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to current users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
+**Takeaway:** All respondents rate having specific tools or datasets supported/available as a very important feature for using AnVIL. Compared to returning users, potential users rate having a free-version with limited compute or storage as the most important feature for their potential use of the AnVIL.
 
 <details><summary>Question and possible answers</summary>
 
@@ -788,7 +772,7 @@ forumPlot
 * Specific tools or datasets are available/supported
 * Greater adoption of the AnVIL by the scientific community
 
-We're going to look at a comparison of the assigned ranks for these features, comparing between current users and potential users.
+We're going to look at a comparison of the assigned ranks for these features, comparing between returning users and potential users.
 
 </details>
 
@@ -798,21 +782,21 @@ Average rank is total rank (sum of given ranks) divided by number of votes (numb
 
 <details><summary>Description of variable definitions and steps for preparing the data </summary>
 
-We make two different dataframes that find the total ranks (column name: `totalRank`) and avg ranks (column name: `avgRank`) for each future and then row bind (`bind_rows`) these two dataframes together to make `totalRanksdf`. The reason that we make two separately are that one is for Potential users (`starts_with("PotentialRank")`) and one is for Current users (`starts_with("CurrentRank")`). They have a different number of votes `nranks` and so it made more sense to work with them separately, following the same steps and then row bind them together.
+We make two different dataframes that find the total ranks (column name: `totalRank`) and avg ranks (column name: `avgRank`) for each future and then row bind (`bind_rows`) these two dataframes together to make `totalRanksdf`. The reason that we make two separately are that one is for Potential users (`starts_with("PotentialRank")`) and one is for returning users (`starts_with("ReturningRank")`). They have a different number of votes `nranks` and so it made more sense to work with them separately, following the same steps and then row bind them together.
 
 The individual steps for each of these dataframes is to
 
 * `select` the relevant columns from `resultsTidy`
-* perform sums with `colSums`, adding together the ranks in those columns (each column corresponds to a queried feature); We set `na.rm = TRUE` to ignore the NAs (since not every survey respondent was asked each question; e.g., if they were a current user they weren't asked as a potential user)
+* perform sums with `colSums`, adding together the ranks in those columns (each column corresponds to a queried feature); We set `na.rm = TRUE` to ignore the NAs (since not every survey respondent was asked each question; e.g., if they were a returning user they weren't asked as a potential user)
 * send those sums to a data frame such that the selected column names from the first step are now the row names and the total summed rank is the only column with values in each row corresponding to each queried feature
 * Use a `mutate` to
-  * add a new column `nranks` that finds the number of responses in the survey are from potential users (e.g., the number that would have assigned ranks to the PotentialRank questions) or the number of responses in the survey that are from current/returning users (e.g., the number that would have assigned ranks to the CurrentRank questions).
+  * add a new column `nranks` that finds the number of responses in the survey are from potential users (e.g., the number that would have assigned ranks to the PotentialRank questions) or the number of responses in the survey that are from returning users (e.g., the number that would have assigned ranks to the ReturningRank questions).
   * add a new column `avgRank` that divides the `totalRank` by the `nranks`
 
 After these two dataframes are bound together (`bind_rows`), the rest of the steps are for aesthetics in plotting and making sure ggplot knows the `UserType` and the feature of interest, etc.
 
 * We move the rownames to their own column `UsertypeFeature` (with the `mutate(UsertypeFeature = rownames(.))`).
-* We separate the values in that column on the word "Rank" to remove the `UsertypeFeature` column we just made but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Current" or "Potential", and the Features are listed in the code below, because...
+* We separate the values in that column on the word "Rank" to remove the `UsertypeFeature` column we just made but then make two new columns (`Usertype` and `Feature`) where `Usertype is either "Returning" or "Potential", and the Features are listed in the code below, because...
 * We then use a `case_when` within a `mutate()` to fill out those features so they're more informative and show the choices survey respondents were given.
 
 </details>
@@ -827,10 +811,10 @@ totalRanksdf <-
       mutate(nranks = sum(resultsTidy$UserType == "Potential User"),
              avgRank = totalRank / nranks),
     resultsTidy %>%
-      select(starts_with("CurrentRank")) %>%
+      select(starts_with("ReturningRank")) %>%
       colSums(na.rm = TRUE) %>%
       as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
-      mutate(nranks = sum(resultsTidy$UserType == "Current User"),
+      mutate(nranks = sum(resultsTidy$UserType == "Returning User"),
              avgRank = totalRank /nranks)
   ) %>%
   mutate(UsertypeFeature = rownames(.)) %>%
@@ -843,7 +827,7 @@ totalRanksdf <-
                      Feature == "ToolsData" ~ "Specific tools or datasets are available/supported",
                      Feature == "CommunityAdoption" ~ "Greater adoption of the AnVIL by the scientific community"),
          Usertype = factor(case_when(Usertype == "Potential" ~ "Potential Users",
-                                     Usertype == "Current" ~ "Current Users"), levels = c("Potential Users", "Current Users"))
+                                     Usertype == "Returning" ~ "Returning Users"), levels = c("Potential Users", "Returning Users"))
          )
 ```
 
@@ -885,7 +869,7 @@ ggsave(here("plots/dumbbellplot_xlim16_revaxis_rankfeatures.png"), plot = gdumbb
 
 ## Preferences: Training Workshop Modality Ranking
 
-**Takeaway:** Both current and potential users vastly prefer virtual training workshops.
+**Takeaway:** Both returning and potential users vastly prefer virtual training workshops.
 
 <details><summmary>Question and possible answers</summary>
 
@@ -912,13 +896,13 @@ The responses are stored in the starts with `AnVILTrainingWorkshops` columns
 ```{r}
 toPlotTrainingRanks <- bind_rows(
   resultsTidy %>%
-    filter(UserType == "Current User") %>%
+    filter(UserType == "Returning User") %>%
     select(starts_with("AnVILTrainingWorkshops")) %>%
     colSums(na.rm = TRUE) %>%
     as.data.frame() %>% `colnames<-`(c("totalRank")) %>%
-    mutate(nranks = sum(resultsTidy$UserType == "Current User"),
+    mutate(nranks = sum(resultsTidy$UserType == "Returning User"),
           avgRank = totalRank / nranks,
-          UserType = "Current Users") %>%
+          UserType = "Returning Users") %>%
   mutate(TrainingType = rownames(.)) %>%
   mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", "")),
   resultsTidy %>%
@@ -932,7 +916,7 @@ toPlotTrainingRanks <- bind_rows(
     mutate(TrainingType = rownames(.)) %>%
     mutate(TrainingType = str_replace(TrainingType, "AnVILTrainingWorkshops", ""))
   ) %>% mutate(TrainingType = recode(TrainingType, "SpecEvent" = "AnVIL-specific event", "OnSite" = "On-site at my institution", "Conference" = "Conference (e.g., CSHL, AMIA)")) %>%
-  mutate(UserType = factor(UserType, levels = c("Potential Users", "Current Users")))
+  mutate(UserType = factor(UserType, levels = c("Potential Users", "Returning Users")))
 
 ```
 
@@ -959,18 +943,16 @@ ggsave(here("plots/dumbbellplot_xlim15_revaxis_trainingmodalitypref.png"), plot 
 **Takeaway:** Institutional HPC and locally/personal computers are the most common responses.
 
 - Google Cloud Platform (GCP) is reported as used more than other cloud providers within this sample.
-- We also see that potential users report using Galaxy (a free option) more than current users do.
+- We also see that potential users report using Galaxy (a free option) more than returning users do.
 
 ### Prepare and plot the data
 
 ```{r}
 whereRunPlot <- resultsTidy %>%
-  separate(WhereAnalysesRun,
-           c("whereRunA", "whereRunB", "whereRunC", "whereRunD", "whereRunE", "whereRunF", "whereRunG"),
-           sep = ", ", fill = "right") %>%
-  pivot_longer(starts_with("whereRun"), values_to = "wherePlatforms") %>%
-  mutate(wherePlatforms =
-           recode(wherePlatforms,
+  separate_longer_delim(WhereAnalysesRun,
+           delim = ", ") %>%
+  mutate(WhereAnalysesRun =
+           recode(WhereAnalysesRun,
                   "Amazon Web Services (AWS)" = "AWS",
                   "Galaxy (usegalaxy.org)" = "Galaxy",
                   "Galaxy Australia" = "Galaxy",
@@ -979,11 +961,10 @@ whereRunPlot <- resultsTidy %>%
                   "Personal computer (locally)," = "Personal computer (locally)",
                   "local server" = "Institutional HPC")
          ) %>%
-  group_by(UserType, wherePlatforms) %>%
+  group_by(UserType, WhereAnalysesRun) %>%
   summarize(count = n()) %>%
-  drop_na() %>%
   ggplot(aes(x = count,
-             y = reorder(wherePlatforms, count),
+             y = reorder(WhereAnalysesRun, count),
              fill = UserType)) +
   geom_bar(stat="identity") +
   ggtitle("Where do you currently run analyses?")
@@ -1029,10 +1010,10 @@ Answers are stored in the `FundingSources` column. This question was a select al
 </details>
 
 ```{r}
-toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG"), sep = ", ", fill="right") %>%
-  pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichFundingSource") %>%
-  drop_na(whichFundingSource) %>%
-  group_by(whichFundingSource, UserType) %>% summarize(count = n())
+toPlotFundingSource <- resultsTidy %>%
+  separate_longer_delim(FundingSources, delim = ", ") %>%
+  group_by(FundingSources, UserType) %>%
+  summarize(count = n())
 ```
 
 <details><summary> Plot the data variable definition and steps </summary>
@@ -1041,7 +1022,10 @@ toPlotFundingSource <- resultsTidy %>% separate(FundingSources, c("WhichA", "Whi
 
 ```{r}
 
-fundingSourcePlot <- toPlotFundingSource %>% ggplot(aes(y = reorder(whichFundingSource,count), x = count, fill = UserType)) +
+fundingSourcePlot <- toPlotFundingSource %>%
+  ggplot(aes(y = reorder(FundingSources,count),
+             x = count,
+             fill = UserType)) +
   geom_bar(position = "stack", stat = "identity") +
   ggtitle("What source(s) of funds do you use to pay for cloud computing?")
 
@@ -1077,21 +1061,19 @@ timeUsePlot
 
 ## Returning User: Foreseeable Computational Needs
 
-**Takeaway:** Of the `r nrow(resultsTidy %>% filter(UserType == "Current User"))` current users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
+**Takeaway:** Of the `r nrow(resultsTidy %>% filter(UserType == "Returning User"))` returning users, all `r 50 - sum(is.na(resultsTidy$NeededResources))` provided an answer to this question. The most common response here is needing large amounts of storage.
 
 ```{r}
 compNeedsPlot <- resultsTidy %>%
-  separate(NeededResources,
-           c("whichResourceA", "whichResourceB", "whichResourceC", "whichResourceD"),
-           sep = ", ", fill = "right") %>%
-  pivot_longer(starts_with("whichResource"), values_to = "ResourceDescription") %>%
-  group_by(ResourceDescription) %>%
+  separate_longer_delim(NeededResources,
+           delim = ", ") %>%
+  group_by(NeededResources) %>%
   summarize(count = n()) %>%
   drop_na() %>%
   ggplot(aes(x = count,
-             y = reorder(ResourceDescription, count),
+             y = reorder(NeededResources, count),
              fill = "#25445A")) +
-  geom_text(aes(label = count, group = ResourceDescription),
+  geom_text(aes(label = count, group = NeededResources),
                   hjust = -1, size=2) +
   geom_bar(stat = "identity") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")

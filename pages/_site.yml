@@ -16,7 +16,7 @@ navbar:
     href: Awareness.html
   - text: "Preferences"
     href: Preferences.html
-  - text: "Current Users"
+  - text: "Returning Users"
     href: "CurrentUserQs.html"
   - text: "Contact"
     href: contact.html
@@ -34,3 +34,4 @@ output:
     css: styles.css
     includes:
        in_header: resources/header.html
+       after_body: resources/footer.html

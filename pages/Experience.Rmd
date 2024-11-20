@@ -23,7 +23,7 @@ PlotToolKnowledge_avg_score
 
 ## Takeaways
 
-Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to current users. Where tools were present on and off AnVIL, current users report similar comfort levels.
+Except for Galaxy, potential users tend to report lower comfort levels for the various tools and technologies when compared to returning users. Where tools were present on and off AnVIL, returning users report similar comfort levels.
 
 Overall, there is less comfort with containers or workflows than using various programming languages and integrated development environments (IDEs).
 

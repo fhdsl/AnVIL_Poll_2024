@@ -1,5 +1,5 @@
 ---
-title: "Identify current vs potential users"
+title: "Identify returning vs potential users"
 author: ""
 date: ""
 output: html_document
@@ -21,7 +21,7 @@ typeOfUserPlot
 
 ## Takeaway
 
-Of the `r nrow(resultsTidy)` responses, `r nrow(resultsTidy %>% filter(UserType == "Current User"))` are current users and `r nrow(resultsTidy %>% filter(UserType == "Potential User"))` are potential users. The majority of current users belong to the group who use the AnVIL for ongoing projects while the majority of potential users are evenly split between those who have never used the AnVIL (but have heard of it) and those who have used the AnVIL previously, but don't currently.
+Of the `r nrow(resultsTidy)` responses, `r nrow(resultsTidy %>% filter(UserType == "Returning User"))` are returning users and `r nrow(resultsTidy %>% filter(UserType == "Potential User"))` are potential users. The majority of returning users belong to the group who use the AnVIL for ongoing projects while the majority of potential users are evenly split between those who have never used the AnVIL (but have heard of it) and those who have used the AnVIL previously, but don't currently.
 
 ## Potential Follow-ups:
 

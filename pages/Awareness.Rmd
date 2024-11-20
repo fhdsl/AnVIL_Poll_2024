@@ -30,7 +30,7 @@ demoPlot
 
 ## Takeaway
 
-Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both current and potential AnVIL users.
+Most respondents have not attended an AnVIL Demo. To investigate whether this is an awareness issue, we aggregated all responses except `No, didn't know of`. We see that the majority of respondents are aware of AnVIL Demos. These responses are just distributed among different ways of utilizing the demos. Further, there's awareness among both returning and potential AnVIL users.
 
 <br/>
 
@@ -50,4 +50,4 @@ forumPlot
 
 ## Takeaway
 
-Most respondents have not used the AnVIL support forum. We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and current users. While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.
+Most respondents have not used the AnVIL support forum. We aggregated these responses to examine awareness. We observe that there is awareness of the support forum across potential and returning users. While utilization in some form is reported by about 20% of respondents, reading through others' posts is the most common way of utilizing the support forum within this sample.

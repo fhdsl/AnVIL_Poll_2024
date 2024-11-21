@@ -874,8 +874,15 @@ How many repositories did users select/report?
 ```{r}
 numReposPlot <- resultsTidy %>% 
   mutate(numRepos = (str_count(RepositoriesDMS, ",|&")+1)) %>% #count commas or an and sign and add one since 2 commas means three responses
-  filter(!str_detect(RepositoriesDMS, "I'm not sure")) #remove rows where they responded I'm not sure what DMS policy is no matter how many things they selected
-#need to finish plotting this
+  filter(!str_detect(RepositoriesDMS, "I'm not sure")) %>% #remove rows where they responded I'm not sure what DMS policy is no matter how many things they selected
+  ggplot(aes(y = factor(numRepos))) + 
+  geom_bar() +
+  ggtitle("What repositories are you considering to share data\n(for example, to comply with the NIH DMS Policy)?")
+  
+numReposPlot %<>% stylize_bar(
+y = "Number of Repositories")
+
+numReposPlot
 ```
 
 ## Preferences: Source for cloud computing funds (supplemental)

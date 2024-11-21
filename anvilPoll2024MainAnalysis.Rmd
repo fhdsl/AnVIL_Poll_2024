@@ -1000,7 +1000,8 @@ dmsPlot <- resultsTidy %>%
              y = reorder(RepositoriesDMS, count),
              fill = UserType)) +
   geom_bar(stat = "identity") +
-  labs(caption = '* denotes a user provided "Other" response') #Add a caption about * meaning an "Other" response that was user provided
+  labs(caption = '* denotes a user provided "Other" response') + #Add a caption about * meaning an "Other" response that was user provided
+  ggtitle("What repositories are you considering to share data\n(for example, to comply with the NIH DMS Policy)?")
 
 dmsPlot %<>% stylize_bar(ylabel = "Data Repository")
 

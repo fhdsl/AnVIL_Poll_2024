@@ -977,7 +977,37 @@ whereRunPlot
 
 ## Preferences: DMS compliance/data repositories
 
-NEED TO FILL OUT
+```{r}
+dmsPlot <- resultsTidy %>%
+  separate_longer_delim(RepositoriesDMS, delim=", ") %>%
+  separate_longer_delim(RepositoriesDMS, delim=" & ") %>%
+  mutate(RepositoriesDMS = 
+           recode(RepositoriesDMS,
+                  "dbGaP" = "dbGaP*",
+                  "dbGAP" = "dbGaP*",
+                  "dbGap" = "dbGaP*",
+                  "EGA" = "EGA*",
+                  "GEO" = "GEO*",
+                  "SRA" = "SRA*",
+                  "NeMO" = "NeMO*",
+                  "Google Drive" = "Google Drive*",
+                  "GitHub" = "GitHub*",
+                  "ENCODE" = "ENCODE*",
+                  "BioData Catalyst" = "BioData Catalyst*")) %>%
+  group_by(UserType, RepositoriesDMS) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = count, 
+             y = reorder(RepositoriesDMS, count),
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  labs(caption = '* denotes a user provided "Other" response') #Add a caption about * meaning an "Other" response that was user provided
+
+dmsPlot %<>% stylize_bar(ylabel = "Data Repository")
+
+dmsPlot
+
+ggsave(here("plots/DMS_Repositories.png"), plot = "dmsPlot") #set save size
+```
 
 ## Preferences: Source for cloud computing funds
 

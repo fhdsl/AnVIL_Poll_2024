@@ -57,7 +57,9 @@ Institutional HPC and locally/personal computers are the most common responses. 
 
 # DMS compliance/data repositories
 
-TBA
+```{r message=FALSE, echo=FALSE}
+dmsPlot
+```
 
 <br/>
 

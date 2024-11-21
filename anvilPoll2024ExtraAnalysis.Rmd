@@ -869,7 +869,14 @@ ggsave(here("plots/stackedbarplot_rankfeatures.png"))
 
 ## Preferences: DMS compliance/data repositories (supplemental)
 
-*No supplements at this time*
+How many repositories did users select/report?
+
+```{r}
+numReposPlot <- resultsTidy %>% 
+  mutate(numRepos = (str_count(RepositoriesDMS, ",|&")+1)) %>% #count commas or an and sign and add one since 2 commas means three responses
+  filter(!str_detect(RepositoriesDMS, "I'm not sure")) #remove rows where they responded I'm not sure what DMS policy is no matter how many things they selected
+#need to finish plotting this
+```
 
 ## Preferences: Source for cloud computing funds (supplemental)
 

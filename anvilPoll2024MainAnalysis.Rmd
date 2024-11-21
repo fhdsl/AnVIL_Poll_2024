@@ -1006,7 +1006,7 @@ dmsPlot %<>% stylize_bar(ylabel = "Data Repository")
 
 dmsPlot
 
-ggsave(here("plots/DMS_Repositories.png"), plot = "dmsPlot") #set save size
+ggsave(here("plots/DMS_Repositories.png"), plot = dmsPlot) #set save size
 ```
 
 ## Preferences: Source for cloud computing funds

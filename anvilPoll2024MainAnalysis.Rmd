@@ -977,7 +977,46 @@ whereRunPlot
 
 ## Preferences: DMS compliance/data repositories
 
-NEED TO FILL OUT
+```{r}
+nonOtherResponses <- read_delim(here("data/codebook.txt"), #read in the codebook
+                                delim = "\t", 
+                                col_select = c(SimplifiedColNames, Description)) %>% 
+  filter(SimplifiedColNames == "RepositoriesDMS") %>% #select just the row of information for the column of interest
+  separate_longer_delim(Description, delim =", ") %>%  #separate the choices from each other
+  separate_longer_delim(Description, delim="include ") %>% #separate the choices from the rest of the description
+  filter(!str_detect(Description, "This question|Other|Possible answers")) %>% #keep only the known responses
+  select(Description) %>% 
+  data.frame() %>%
+  mutate(suffix = "")
+
+dmsPlot <- resultsTidy %>%
+  separate_longer_delim(RepositoriesDMS, delim=", ") %>%
+  separate_longer_delim(RepositoriesDMS, delim=" & ") %>%
+  mutate(RepositoriesDMS = 
+           case_when(
+             str_detect(RepositoriesDMS, regex("dbgap", ignore_case = TRUE)) ~ "dbGaP",
+             .default = as.character(RepositoriesDMS)
+                     )
+         ) %>%
+  select(UserType, RepositoriesDMS) %>%
+  left_join(nonOtherResponses, by = c("RepositoriesDMS" = "Description")) %>% #use this left_join to identify responses that weren't user provided
+  replace_na(list(suffix="*")) %>% #user provided responses will have NA in the suffix column from the left_join, so we replace those with an asterisk
+  unite(RepositoriesMut, c("RepositoriesDMS", "suffix"), sep="") %>% #unite the responses with the suffix, appending the asterisk for user supplied answers
+  group_by(UserType, RepositoriesMut) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = count, 
+             y = reorder(RepositoriesMut, count),
+             fill = UserType)) +
+  geom_bar(stat = "identity") +
+  labs(caption = '* denotes a user provided "Other" response') + #Add a caption about * meaning an "Other" response that was user provided
+  ggtitle("What repositories are you considering\nto share data (for example, to comply\nwith the NIH DMS Policy)?")
+
+dmsPlot %<>% stylize_bar(ylabel = "Data Repository")
+
+dmsPlot
+
+ggsave(here("plots/DMS_Repositories.png"), plot = dmsPlot) #set save size
+```
 
 ## Preferences: Source for cloud computing funds
 

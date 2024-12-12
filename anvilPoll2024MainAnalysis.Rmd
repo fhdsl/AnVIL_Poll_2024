@@ -40,7 +40,7 @@ First, we group the data by the assigned UserType labels/categories and their re
 
 </details>
 
-```{r}
+```{r, fig.height = 4, fig.width = 7}
 typeOfUserPlot <- resultsTidy %>%
   group_by(UserType, CurrentUsageDescription) %>%
   summarize(count = n()) %>%
@@ -85,7 +85,7 @@ The rest of the changes are related to theme and labels and making sure that the
 
 </details>
 
-```{r}
+```{r, fig.height = 4, fig.width = 7}
 
 degreePlot <- resultsTidy %>%
   group_by(FurtherSimplifiedDegrees, UserType) %>%
@@ -173,7 +173,7 @@ First, we set the factor level for the further simplified institutional type col
 
 </details>
 
-```{r}
+```{r, fig.height = 5, fig.width = 8}
 instTypePlot <- resultsTidy %>%
   mutate(FurtherSimplifiedInstitutionalType = factor(FurtherSimplifiedInstitutionalType, levels = c("Industry & Other", "Education Focused", "Research Intensive"))) %>%
   group_by(UserType, FurtherSimplifiedInstitutionalType) %>% summarize(InstitutionalCount = n()) %>%

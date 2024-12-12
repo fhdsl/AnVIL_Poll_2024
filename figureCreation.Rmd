@@ -1,0 +1,27 @@
+---
+title: "Report Out Figures"
+output: html_document
+date: ""
+---
+
+```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
+library(here)
+library(patchwork)
+
+# Inherit plots
+knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
+```
+
+```{r, fig.width = 8, fig.height = 14}
+(typeOfUserPlot + xlim(c(0,45)) + ggtitle(""))  /
+  (degreePlot + xlim(c(0,45)) + ggtitle("")) /
+  (instTypePlot + xlim(c(0,45)) + ggtitle("")) +
+  plot_annotation(title = "Type of User Identification and Background",
+                  caption = "A: How would you describe your current usage of the AnVIL platform?\n B: What is the highest degree you have attained?\nC: What institution are you affiliated with?",
+                  tag_levels = 'A',
+                  theme = theme(plot.title = element_text(size = 16))
+                  ) +
+  plot_layout(guides = 'collect',
+              axis_title="collect")
+
+```

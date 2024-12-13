@@ -983,7 +983,11 @@ whereRunPlot <- resultsTidy %>%
              y = reorder(WhereAnalysesRun, count),
              fill = UserType)) +
   geom_bar(stat="identity") +
-  ggtitle("Where do you currently run analyses?")
+  ggtitle("Where do you currently run analyses?") +
+  geom_text(
+    aes(label = after_stat(x), group = WhereAnalysesRun),
+    stat = 'summary', fun = sum, hjust = -1, size=2
+) + coord_cartesian(clip = "off")
 
 whereRunPlot %<>% stylize_bar(ylabel = "Platform")
 

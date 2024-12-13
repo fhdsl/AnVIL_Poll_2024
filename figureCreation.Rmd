@@ -7,21 +7,42 @@ date: ""
 ```{r, message = FALSE, echo = FALSE,results='hide', warning=FALSE}
 library(here)
 library(patchwork)
+library(ggpubr)
+library(tibble)
 
 # Inherit plots
 knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 ```
 
-```{r, fig.width = 8, fig.height = 14}
+## Figure 2: Type of User Identification and Background
+
+```{r, fig.width = 10, fig.height = 18}
 (typeOfUserPlot + xlim(c(0,45)) + ggtitle(""))  /
   (degreePlot + xlim(c(0,45)) + ggtitle("")) /
-  (instTypePlot + xlim(c(0,45)) + ggtitle("")) +
+  (instTypePlot + xlim(c(0,45)) + ggtitle("")) /
+  genomicsExpPlot_replot +
   plot_annotation(title = "Type of User Identification and Background",
-                  caption = "A: How would you describe your current usage of the AnVIL platform?\n B: What is the highest degree you have attained?\nC: What institution are you affiliated with?",
+                  caption = "A: How would you describe your current usage of the AnVIL platform?\n B: What is the highest degree you have attained?\nC: What institution are you affiliated with?\nD: How much experience do you have analyzing the following data categories?",
                   tag_levels = 'A',
                   theme = theme(plot.title = element_text(size = 16))
                   ) +
   plot_layout(guides = 'collect',
               axis_title="collect")
 
+```
+
+## Figure 3: User Preferences
+
+```{r, fig.width = 8, fig.height = 10}
+gdumbbell /
+  plot_spacer() /
+  tdumbbell +
+  plot_annotation(title = "User Preferences",
+                  caption = "Fill in later",
+                  tag_levels = "A",
+                  theme = theme(plot.title = element_text(size = 16))
+                  ) +
+  plot_layout(guides = "collect",
+              axis_title = "collect",
+              widths = c(8), heights = c(5, 0.25, 3)) & theme(legend.position = 'bottom')
 ```

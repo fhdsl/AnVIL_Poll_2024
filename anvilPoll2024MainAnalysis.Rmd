@@ -474,6 +474,22 @@ genomicsExpPlot
 ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")) #set plot size
 ```
 
+
+```{r, fig.height = 4, fig.width = 9}
+genomicsExpPlot_replot <- ggplot(experienceDf, aes(x=n, y=experienceLevel, fill=UserType)) +
+  facet_wrap(~researchType, ncol=3) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(
+                  aes(label = after_stat(x), group = experienceLevel),
+                  stat = 'summary', fun = sum, hjust = -1, size=2
+                ) +
+      coord_cartesian(clip = "off")
+
+genomicsExpPlot_replot %<>% stylize_bar()
+
+genomicsExpPlot_replot
+```
+
 ## Experience: Controlled Access Datasets
 
 **Takeaway:** Generally, over half of respondents report they are extremely interested in working with controlled access datasets.
@@ -849,14 +865,14 @@ Finally, we'll reverse the x-axis so that most important is on the right and lea
 
 </details>
 
-```{r}
+```{r, fig.height = 5, fig.width = 8}
 
 gdumbbell <- ggplot(totalRanksdf,
                     aes(x = avgRank,
                         y = reorder(Feature, -avgRank))) +
   geom_line() +
   geom_point(aes(color = Usertype), size = 3) +
-  ggtitle("Rank the following features\naccording to their importance to\nyou as a potential user or for\nyour continued use of the AnVIL")
+  ggtitle("Rank the following features according to\ntheir importance to you as a potential user\nor for your continued use of the AnVIL.")
 
 
 gdumbbell %<>% stylize_dumbbell(xmax=6, importance = TRUE)
@@ -924,14 +940,14 @@ toPlotTrainingRanks <- bind_rows(
 
 </details>
 
-```{r}
+```{r, fig.height = 5, fig.width = 6}
 tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingType, -avgRank))) +
   geom_line() +
   geom_point(aes(color = UserType), size = 3) +
-  ggtitle("Please rank how/where you would prefer to attend\nAnVIL training workshops.")
+  ggtitle("Please rank how/where you would prefer\nto attend AnVIL training workshops.")
 
 
-tdumbbell %<>% stylize_dumbbell(preference = TRUE, xlabel = "Average Rank", ylabel = "Training Workshop Modality", xmax=5)
+tdumbbell %<>% stylize_dumbbell(preference = TRUE, xmax = 5)
 
 tdumbbell
 

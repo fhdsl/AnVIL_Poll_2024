@@ -46,3 +46,15 @@ gdumbbell /
               axis_title = "collect",
               widths = c(8), heights = c(5, 0.25, 3)) & theme(legend.position = 'bottom')
 ```
+
+## Figure 4: User Technological Comfort
+
+```{r, fig.width = 8, fig.height = 10}
+(PlotToolKnowledge_avg_score + ggtitle("") + ylab("")) /
+  (whereRunPlot + ggtitle("") + ylab("")) + 
+  plot_annotation(title = "User Technological Comfort",
+                  caption = "A: How would you rate your knowledge of or comfort with these technologies or data features?\nB: Where do you currently run analyses?",
+                  tag_levels = "A",
+                  theme = theme(plot.title = element_text(size = 16))
+                  )
+```

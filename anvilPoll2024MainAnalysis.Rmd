@@ -476,18 +476,24 @@ ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")
 
 
 ```{r, fig.height = 4, fig.width = 9}
-genomicsExpPlot_replot <- ggplot(experienceDf, aes(x=n, y=experienceLevel, fill=UserType)) +
-  facet_wrap(~researchType, ncol=3) +
-  geom_bar(stat = "identity", position = "stack") +
-  geom_text(
-                  aes(label = after_stat(x), group = experienceLevel),
-                  stat = 'summary', fun = sum, hjust = -1, size=2
-                ) +
-      coord_cartesian(clip = "off")
+experienceDf_pct <- 
+  experienceDf %>% 
+  group_by(UserType, researchType) %>% 
+  mutate(GroupTotal = sum(n),
+         Pct = n / GroupTotal * 100)
 
-genomicsExpPlot_replot %<>% stylize_bar()
+genomicsExpPlot_replot <- 
+  ggplot(experienceDf_pct, aes(x=Pct, y=UserType, fill=experienceLevel)) +
+  facet_wrap(~researchType, ncol=1) +
+  geom_bar(stat = "identity", position = "stack")
 
-genomicsExpPlot_replot
+genomicsExpPlot_replot %<>% stylize_bar(xlabel = "Percent of Respondents")
+
+genomicsExpPlot_replot +
+  scale_fill_manual(values = c(
+    colorRampPalette(c("grey70", "#333333"))(5)
+  ))
+
 ```
 
 ## Experience: Controlled Access Datasets

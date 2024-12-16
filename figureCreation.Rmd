@@ -14,40 +14,63 @@ library(tibble)
 knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 ```
 
+## Figure 1: Flowchart
+
+![Design of the Poll](plots/AnVILPoll2024Flowchart_returninglabel.png)
+
 ## Figure 2: Type of User Identification and Background
 
-```{r, fig.width = 10, fig.height = 18}
+```{r, fig.width = 10, fig.height = 14}
+
 (typeOfUserPlot + xlim(c(0,45)) + ggtitle(""))  /
   (degreePlot + xlim(c(0,45)) + ggtitle("")) /
-  (instTypePlot + xlim(c(0,45)) + ggtitle("")) /
-  genomicsExpPlot_replot +
-  plot_annotation(title = "Type of User Identification and Background",
-                  caption = "A: How would you describe your current usage of the AnVIL platform?\n B: What is the highest degree you have attained?\nC: What institution are you affiliated with?\nD: How much experience do you have analyzing the following data categories?",
-                  tag_levels = 'A',
-                  theme = theme(plot.title = element_text(size = 16))
-                  ) +
+  (instTypePlot + xlim(c(0,45)) + ggtitle("")) +
   plot_layout(guides = 'collect',
-              axis_title="collect")
+              axis_title="collect") +
+  plot_annotation(title = "Type of User Identification and Background",
+                  caption = "A: How would you describe your current usage of the AnVIL platform?\nB: What is the highest degree you have attained?\nC: What institution are you affiliated with?",
+                  tag_levels = 'A',
+                  theme = theme(plot.title = element_text(size = 16),
+                                plot.caption.position = "plot",
+                                plot.caption = element_text(hjust = 0)
+                                )
+                  )
+```
+
+## Figure 3: User research experience  
+
+```{r, fig.width=6, fig.height = 5}
+genomicsExpPlot_replot + 
+  plot_annotation(title = "User research experience",
+                  caption = "How much experience do you have analyzing the following data categories?", 
+                  theme = theme(plot.title = element_text(size = 16),
+                                plot.caption.position = "plot",
+                                plot.caption = element_text(hjust = 0)
+                                )
+                  )
 
 ```
 
-## Figure 3: User Preferences
+## Figure 4: User Preferences
 
 ```{r, fig.width = 8, fig.height = 10}
-gdumbbell /
+(gdumbbell + ggtitle("")) /
   plot_spacer() /
-  tdumbbell +
+  (tdumbbell + ggtitle("")) +
   plot_annotation(title = "User Preferences",
-                  caption = "Fill in later",
+                  caption = "A: Rank the following features according to their importance to you as a potential user or for your continued use of the AnVIL.\nB: Rank how/where you would prefer to attend AnVIL training workshops.",
                   tag_levels = "A",
-                  theme = theme(plot.title = element_text(size = 16))
+                  theme = theme(plot.title = element_text(size = 16),
+                                plot.caption.position = "plot",
+                                plot.caption = element_text(hjust = 0)
+                                )
                   ) +
   plot_layout(guides = "collect",
               axis_title = "collect",
               widths = c(8), heights = c(5, 0.25, 3)) & theme(legend.position = 'bottom')
 ```
 
-## Figure 4: User Technological Comfort
+## Figure 5: User Technological Comfort
 
 ```{r, fig.width = 8, fig.height = 10}
 (PlotToolKnowledge_avg_score + ggtitle("") + ylab("")) /
@@ -55,6 +78,33 @@ gdumbbell /
   plot_annotation(title = "User Technological Comfort",
                   caption = "A: How would you rate your knowledge of or comfort with these technologies or data features?\nB: Where do you currently run analyses?",
                   tag_levels = "A",
-                  theme = theme(plot.title = element_text(size = 16))
+                  theme = theme(plot.title = element_text(size = 16),
+                                plot.caption.position = "plot",
+                                plot.caption = element_text(hjust = 0)
+                                )
                   )
+```
+
+## Figure 6: Support Awareness
+
+```{r, fig.width = 10, fig.height = 8}
+((demoPlotRaw + ggtitle("") + xlab("")) + (demoPlot + ggtitle("") + ylab("") + xlab(""))) /
+  ((forumPlotRaw + ggtitle("")) + (forumPlot + ggtitle("") + ylab(""))) +
+  plot_annotation(title = "User awareness and utilization of AnVIL support",
+                  caption = "A & B: Have you attended a monthly AnVIL Demo? A shows raw responses while B recodes those responses to report on whether the user is or isn't aware of AnVIL Demos.\nC & D: Have you ever read or posted in our AnVIL Support Forum? C shows raw responses (users could select more than one), while D recodes each user's set of responses to report on whether the user is or isn't aware of the AnVIL Support Forum.",
+                  tag_levels = "A",
+                  theme = theme(plot.title = element_text(size = 16),
+                                plot.caption.position = "plot",
+                                plot.caption = element_text(hjust=0)
+                                )
+                  ) +
+  plot_layout(guides = "collect") & theme(legend.position = "bottom")
+```
+
+## Figure 7: Personas
+
+Want to add some kind of clustering or colored lines or shape or something to show which persona/group each respondent/column is
+
+```{r, fig.wdith = 10, fig.height = 5}
+kowPlot
 ```

@@ -487,13 +487,14 @@ genomicsExpPlot_replot <-
   facet_wrap(~researchType, ncol=1) +
   geom_bar(stat = "identity", position = "stack")
 
-genomicsExpPlot_replot %<>% stylize_bar(xlabel = "Percent of Respondents")
+genomicsExpPlot_replot %<>% stylize_bar(xlabel = "Percent of Respondents", usertypeColor = FALSE, sequentialColor = TRUE)
 
-genomicsExpPlot_replot +
+genomicsExpPlot_replot <- genomicsExpPlot_replot +
   scale_fill_manual(values = c(
     colorRampPalette(c("grey70", "#333333"))(5)
-  ))
+  )) + theme(legend.position = "right")
 
+genomicsExpPlot_replot
 ```
 
 ## Experience: Controlled Access Datasets
@@ -701,7 +702,11 @@ demoPlotRaw <- resultsTidy %>%
              x = count,
              fill = UserType)) +
   geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?")
+  ggtitle("Have you attended a monthly AnVIL Demo?") +
+  geom_text(
+    aes(label = after_stat(x), group = AnVILDemo),
+    stat = 'summary', fun = sum, hjust = -1, size=2
+) + coord_cartesian(clip = "off")
 
 demoPlotRaw %<>% stylize_bar()
 
@@ -718,7 +723,11 @@ demoPlot <- resultsTidy %>%
              x = count,
              fill = UserType)) +
   geom_bar(stat = "identity") +
-  ggtitle("Have you attended a monthly AnVIL Demo?")
+  ggtitle("Have you attended a monthly AnVIL Demo?") +
+  geom_text(
+    aes(label = after_stat(x), group = AnVILDemoAwareness),
+    stat = 'summary', fun = sum, hjust = -1, size=2
+) + coord_cartesian(clip = "off")
 
 demoPlot %<>% stylize_bar(ylabel = "Awareness")
 
@@ -758,7 +767,11 @@ forumPlotRaw <- ggplot(forumdf,
                            x = count,
                            fill = UserType)) +
   geom_bar(stat = "identity") +
-  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
+  geom_text(
+    aes(label = after_stat(x), group = AnVILSupportForum),
+    stat = 'summary', fun = sum, hjust = -1, size=2
+) + coord_cartesian(clip = "off")
 
 forumPlotRaw %<>% stylize_bar()
 
@@ -770,7 +783,11 @@ forumPlotRaw
 ```{r}
 forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
   geom_bar() +
-  ggtitle("Have you ever read or posted in our AnVIL Support Forum?")
+  ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
+  #stat_summary(aes(label = after_stat(..count..)), fun = "sum", geom = "text") +
+  geom_text(
+    aes(label = after_stat(..count..)), stat = "count", position = "stack", hjust = -1, size=2) + 
+    coord_cartesian(clip = "off")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness")
 

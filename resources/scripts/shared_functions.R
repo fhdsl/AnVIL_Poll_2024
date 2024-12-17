@@ -2,19 +2,35 @@
 
 library(magrittr)
 library(tidyverse)
+library(forcats)
 
-stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE, xlabel = "Count", ylabel = "", legendpos = "right", rotate = 0, hjustv = 0){
+stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequentialColor = FALSE, xlabel = "Count", ylabel = "", legendpos = "right", rotate = 0, hjustv = 0, labelBars = TRUE, groupVar = NULL){
   if (usertypeColor) {
     fillColors <- c("#E0DD10", "#035C94")
+    positionarg = "stack"
   }
   else if (singleColor){
     fillColors <- c("#25445A")
-    legendpos = "none"
-
+    legendpos <- "none"
+    positionarg <- "identity"
   }
   else if (sequentialColor){
     fillColors <- c("#035C94","#035385","#024A77","#024168", "#02395B")
     legendpos = "none"
+    positionarg <- "identity"
+  }
+  if (labelBars){
+    if (hjustv == 0 | tolower(ylabel) == "count"){
+      gplot <- gplot +
+        geom_text(aes(label = after_stat(..count..)), stat = "count", 
+                  position = positionarg, vjust = -1, size=2) +
+        coord_cartesian(clip = "off")
+    } else{
+      gplot <- gplot +
+        geom_text(aes(label = paste0("    ", after_stat(..count..))), stat = "count", 
+                  position = positionarg, hjust = -1, size=2, group = groupVar, inherit.aes = TRUE) +
+        coord_cartesian(clip = "off")
+    }
   }
   return(
     gplot +
@@ -80,8 +96,8 @@ prep_df_whichData <- function(subset_df, onAnVILDF = NULL){
                  names_to = "WhichChoice",
                  values_to = "whichControlledAccess") %>%
     drop_na(whichControlledAccess) %>%
-    group_by(whichControlledAccess) %>%
-    summarize(count = n()) %>%
+    #group_by(whichControlledAccess) %>%
+    #summarize(count = n()) %>%
     mutate(whichControlledAccess =
              recode(whichControlledAccess,
                     "All of Us*" = "All of Us",
@@ -110,11 +126,11 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
 
   toreturnplot <- ggplot(inputToPlotDF,
                          aes(
-                           x = reorder(whichControlledAccess, -count),
-                           y = count,
+                           x = fct_infreq(whichControlledAccess),#reorder(whichControlledAccess, -count),
+                           #y = count,
                            fill = AnVIL_Availability)
                          ) +
-    geom_bar(stat="identity") +
+    geom_bar() + #stat="identity") +
     theme_classic() +
     theme(panel.background = element_blank(),
           panel.grid = element_blank(),
@@ -126,9 +142,9 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
     ylab("Count") +
     ggtitle("What large, controlled access datasets do you access\nor would you be interested in accessing using the AnVIL?",
             subtitle = subtitle) +
-    geom_text(aes(label = after_stat(y), group = whichControlledAccess),
-              stat = 'summary',
-              fun = sum,
+    geom_text(aes(label = after_stat(..count..), group = whichControlledAccess),
+              stat = 'count', #'summary',
+              #fun = sum,
               vjust = -1,
               size=2) +
     coord_cartesian(clip = "off") +
@@ -141,7 +157,7 @@ prep_df_typeData <- function(subset_df){
   subset_df %<>% separate(TypesOfData, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN", "WhichO"), sep = ", ", fill="right") %>%
     pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichTypeData") %>%
     drop_na(whichTypeData) %>%
-    group_by(whichTypeData) %>% summarize(count = n()) %>%
+    #group_by(whichTypeData) %>% summarize(count = n()) %>%
     mutate(whichTypeData =
              recode(whichTypeData,
                     "I don't analyze data on AnVIL" = NA_character_,
@@ -154,14 +170,14 @@ prep_df_typeData <- function(subset_df){
 }
 
 plot_type_data <- function(inputToPlotDF, subtitle = NULL){
-  toreturnplot <- ggplot(inputToPlotDF, aes(x = reorder(whichTypeData, -count),
-                                            y = count,
+  toreturnplot <- ggplot(inputToPlotDF, aes(x = fct_infreq(whichTypeData),#x = reorder(whichTypeData, -count),
+                                            #y = count,
                                             fill = "#25445A")) +
-    geom_bar(stat="identity") +
-    ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) +
-    geom_text(aes(label = after_stat(y), group = whichTypeData),
-              stat = 'summary', fun = sum, vjust = -1, size=2) +
-    coord_cartesian(clip = "off")
+    geom_bar() + #stat="identity") +
+    ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) #+
+    #geom_text(aes(label = after_stat(y), group = whichTypeData),
+    #          stat = 'summary', fun = sum, vjust = -1, size=2) +
+    #coord_cartesian(clip = "off")
 
   toreturnplot %<>% stylize_bar(usertypeColor = FALSE, singleColor = TRUE, xlabel = "Types of data", ylabel = "Count", hjustv = 1, rotate=45)
 

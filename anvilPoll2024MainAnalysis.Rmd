@@ -154,7 +154,7 @@ kowPlot <- ggplot(dfForPlotKOW,
   ylab("") +
   ggtitle("What kind of work do you do?") +
   xlab("Respondent") +
-  facet_wrap(~UserType)
+  facet_wrap(~UserType, scales = "free_x")
 
 kowPlot
 

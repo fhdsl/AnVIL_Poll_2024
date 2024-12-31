@@ -35,6 +35,8 @@ knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
                                 plot.caption = element_text(hjust = 0)
                                 )
                   )
+
+ggsave(here("plots/user_identification_panels.png"), width=10, height=14, units = "in")
 ```
 
 ## Figure 3: User research experience  
@@ -48,6 +50,7 @@ genomicsExpPlot_replot +
                                 plot.caption = element_text(hjust = 0)
                                 )
                   )
+ggsave(here("plots/user_research_experience_panels.png"), width=6, height=5, units = "in")
 
 ```
 
@@ -68,6 +71,8 @@ genomicsExpPlot_replot +
   plot_layout(guides = "collect",
               axis_title = "collect",
               widths = c(8), heights = c(5, 0.25, 3)) & theme(legend.position = 'bottom')
+
+ggsave(here("plots/user_preferences_panels.png"), width=8, height=10, units="in")
 ```
 
 ## Figure 5: User Technological Comfort
@@ -83,6 +88,8 @@ genomicsExpPlot_replot +
                                 plot.caption = element_text(hjust = 0)
                                 )
                   )
+
+ggsave(here("plots/user_tech_comfort_panels.png"), width=8, height=10, units="in")
 ```
 
 ## Figure 6: Support Awareness
@@ -99,13 +106,15 @@ genomicsExpPlot_replot +
                                 )
                   ) +
   plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+ggsave(here("plots/awareness_panels.png"), width=10, height=8, units="in")
 ```
 
 ## Figure 7: Personas
 
 Want to add some kind of clustering or colored lines or shape or something to show which persona/group each respondent/column is
 
-```{r, fig.wdith = 10, fig.height = 5}
+```{r, fig.wdith = 8, fig.height = 8}
 load(here("data/persona_classifications.rdata"))
 
 kowpersona <- full_join(
@@ -119,7 +128,8 @@ kowpersona <- full_join(
   ) %>% 
     ungroup() %>% 
     select(persona, Timestamp) %>%
-    mutate(Timestamp = factor(Timestamp)),
+    mutate(Timestamp = factor(Timestamp),
+           persona = na_if(persona, "None Assigned")),
   dfForPlotKOW, by = "Timestamp")
 
 p1 <- ggplot(kowpersona,
@@ -138,7 +148,7 @@ p1 <- ggplot(kowpersona,
   #xlab("Respondent") +
   facet_wrap(~UserType, scales = "free_x")
 
-p2 <- ggplot(kowpersona,
+p2 <-ggplot(kowpersona,
        aes(x = Timestamp,
            y = -1,
            fill = persona)) +
@@ -154,9 +164,24 @@ p2 <- ggplot(kowpersona,
   xlab("Respondent") +
   facet_wrap(~UserType,scales = "free_x") +
   ylim(c(0,-1)) +
-  scale_fill_grey(start = 0, end = .9)
+  scale_fill_grey(start = 0.8, end = 0, na.value = "white")
 
-p1 / p2 +
-  plot_layout(widths = c(8), heights = c(5, 0.25))
+p3 <- kowpersona %>% 
+  select(persona, Timestamp) %>%
+  distinct() %>%
+  ggplot(aes(x = factor(1), 
+           fill=persona)) +
+  geom_bar(stat="count", width=1) +
+  coord_polar("y", start=0) +
+  scale_fill_grey(start = 0.8, end = 0, na.value = "white") +
+  theme_void() +
+  geom_text(stat='count',
+            aes(label = after_stat(..count..)),
+            position = position_stack(vjust = 0.5)) +
+  theme(legend.position = "none")
+
+p1 / p2 / p3 +
+  plot_layout(widths = c(8), heights = c(4, 0.25, 3.5))
   
+ggsave(here("plots/personas_panels.png"), width=8, height=8, units="in")
 ```

@@ -53,7 +53,7 @@ instTypePlot
 
 ## Takeaway
 
-Most of the individuals using the AnVIL report being affiliated with a research intensive institution. A further breakdown of these counts are below.
+Most of the individuals using the AnVIL report being affiliated with a research intensive institution.
 
 ## Potential Follow-ups
 

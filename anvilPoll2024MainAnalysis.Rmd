@@ -11,6 +11,7 @@ library(here)
 library(grid) #for Grobs
 library(scales)
 library(forcats)
+library(ggVennDiagram)
 
 knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy
 source(here("resources/scripts/shared_functions.R"))
@@ -507,6 +508,19 @@ genomicsExpPlot_replot <- genomicsExpPlot_replot +
   )) + theme(legend.position = "right")
 
 genomicsExpPlot_replot
+```
+
+```{r, fig.height = 5, fig.width = 5}
+inputList <- list(ClinicalExperience = which(resultsTidy$clinicalFlag),
+                  HumanGenomicsExperience = which(resultsTidy$humanGenomicFlag),
+                  NonHumanGenomicsExperience = which(resultsTidy$nonHumanGenomicFlag))
+
+vennExperience <- ggVennDiagram(inputList,
+              category.names = c("Clinical Experience", "Human Genomics Experience", " Non-human Genomics Experience")) +
+  scale_x_continuous(expand = expansion(mult = .2)) +
+  coord_cartesian(clip = "off")
+
+vennExperience
 ```
 
 ## Experience: Controlled Access Datasets

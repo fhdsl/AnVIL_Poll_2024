@@ -37,7 +37,10 @@ stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequen
     theme_classic() +
     ylab(ylabel) +
     xlab(xlabel) +
-    theme(legend.title = element_blank(), legend.position = legendpos, axis.text.x = element_text(angle=rotate, hjust=hjustv)) +
+    theme(legend.title = element_blank(), 
+          legend.position = legendpos, 
+          axis.text.x = element_text(angle=rotate, hjust=hjustv),
+          text = element_text(size=12)) +
     scale_fill_manual(values = fillColors, na.translate = F)
   )
 }
@@ -56,7 +59,8 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
       theme_bw() +
       theme(panel.background = element_blank(),
             legend.position = "bottom",
-            legend.title = element_blank()) +
+            legend.title = element_blank(),
+            text = element_text(size=12)) +
       xlab(xlabel) +
       ylab(ylabel) +
       scale_color_manual(values = c("#E0DD10", "#035C94")) +
@@ -76,7 +80,8 @@ PlotToolKnowledge_customization <- function(gplot){
       xlab("Average Knowledge or Comfort Score") +
       theme_bw() +
       theme(panel.background = element_blank(),
-            panel.grid.minor.x = element_blank()) +
+            panel.grid.minor.x = element_blank(),
+            text = element_text(size=12)) +
       annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
       annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
       coord_cartesian(clip = "off") +
@@ -89,17 +94,13 @@ PlotToolKnowledge_customization <- function(gplot){
 }
 
 prep_df_whichData <- function(subset_df, onAnVILDF = NULL){
-  subset_df %<>% separate(AccessWhichControlledData,
-                          c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN"),
-                          sep = ", ", fill="right") %>%
-    pivot_longer(starts_with("Which"),
-                 names_to = "WhichChoice",
-                 values_to = "whichControlledAccess") %>%
-    drop_na(whichControlledAccess) %>%
+  subset_df %<>% 
+    separate_longer_delim(AccessWhichControlledData, delim = ", ") %>%
+    drop_na(AccessWhichControlledData) %>%
     #group_by(whichControlledAccess) %>%
     #summarize(count = n()) %>%
-    mutate(whichControlledAccess =
-             recode(whichControlledAccess,
+    mutate(AccessWhichControlledData =
+             recode(AccessWhichControlledData,
                     "All of Us*" = "All of Us",
                     "UK Biobank*" = "UK Biobank",
                     "Centers for Common Disease Genomics (CCDG)" = "CCDG",
@@ -117,7 +118,7 @@ prep_df_whichData <- function(subset_df, onAnVILDF = NULL){
                     "GnomAD and ClinVar" = "None", #not controlled access
              )
     ) %>%
-    left_join(onAnVILDF, by="whichControlledAccess")
+    left_join(onAnVILDF, by=c("AccessWhichControlledData" = "whichControlledAccess"))
 
   return(subset_df)
 }
@@ -126,7 +127,7 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
 
   toreturnplot <- ggplot(inputToPlotDF,
                          aes(
-                           x = fct_infreq(whichControlledAccess),#reorder(whichControlledAccess, -count),
+                           x = fct_infreq(AccessWhichControlledData),#reorder(AccessWhichControlledData, -count),
                            #y = count,
                            fill = AnVIL_Availability)
                          ) +
@@ -136,13 +137,14 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
           panel.grid = element_blank(),
           axis.text.x = element_text(angle=45, hjust=1),
           legend.position = "inside",
-          legend.position.inside = c(0.8, 0.8)
+          legend.position.inside = c(0.8, 0.8),
+          text = element_text(size=12)
           ) +
     xlab("Controlled access datasets") +
     ylab("Count") +
     ggtitle("What large, controlled access datasets do you access\nor would you be interested in accessing using the AnVIL?",
             subtitle = subtitle) +
-    geom_text(aes(label = after_stat(..count..), group = whichControlledAccess),
+    geom_text(aes(label = after_stat(..count..), group = AccessWhichControlledData),
               stat = 'count', #'summary',
               #fun = sum,
               vjust = -1,
@@ -154,28 +156,28 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
 }
 
 prep_df_typeData <- function(subset_df){
-  subset_df %<>% separate(TypesOfData, c("WhichA", "WhichB", "WhichC", "WhichD", "WhichE", "WhichF", "WhichG", "WhichH", "WhichI", "WhichJ", "WhichK", "WhichM", "WhichN", "WhichO"), sep = ", ", fill="right") %>%
-    pivot_longer(starts_with("Which"), names_to = "WhichChoice", values_to = "whichTypeData") %>%
-    drop_na(whichTypeData) %>%
-    #group_by(whichTypeData) %>% summarize(count = n()) %>%
-    mutate(whichTypeData =
-             recode(whichTypeData,
+  subset_df %<>% 
+    separate_longer_delim(TypesOfData, delim=", ") %>%
+    #drop_na(TypesOfData) %>%
+    #group_by(TypesOfData) %>% summarize(count = n()) %>%
+    mutate(TypesOfData =
+             recode(TypesOfData,
                     "I don't analyze data on AnVIL" = NA_character_,
                     "I store data in AnVIL. I don’t analyze it." = NA_character_,
                     "Used in training for analysis of genomes (variant calling)" = "Variant Calling"
              )
     ) %>%
-    drop_na(whichTypeData)
+    drop_na(TypesOfData)
   return(subset_df)
 }
 
 plot_type_data <- function(inputToPlotDF, subtitle = NULL){
-  toreturnplot <- ggplot(inputToPlotDF, aes(x = fct_infreq(whichTypeData),#x = reorder(whichTypeData, -count),
+  toreturnplot <- ggplot(inputToPlotDF, aes(x = fct_infreq(TypesOfData),#x = reorder(whichTypeData, -count),
                                             #y = count,
                                             fill = "#25445A")) +
     geom_bar() + #stat="identity") +
     ggtitle("What types of data do you or would you analyze using the AnVIL?", subtitle = subtitle) #+
-    #geom_text(aes(label = after_stat(y), group = whichTypeData),
+    #geom_text(aes(label = after_stat(y), group = TypesOfData),
     #          stat = 'summary', fun = sum, vjust = -1, size=2) +
     #coord_cartesian(clip = "off")
 

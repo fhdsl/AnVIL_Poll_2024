@@ -11,6 +11,7 @@ library(here)
 library(grid) #for Grobs
 library(scales)
 library(forcats)
+if (!require("ggVennDiagram")) install.packages("ggVennDiagram")
 library(ggVennDiagram)
 
 knitr::knit_child(here("TidyData.Rmd")) #inherit resultsTidy

@@ -39,7 +39,7 @@ knitr::knit_child(here("anvilPoll2024MainAnalysis.Rmd"))
 ggsave(here("plots/user_identification_panels.png"), width=10, height=14, units = "in")
 ```
 
-## Figure 3: User research experience  
+## Figure 6: User research experience  
 
 ```{r, fig.width=7, fig.height = 9}
 genomicsExpPlot_replot /
@@ -56,7 +56,7 @@ ggsave(here("plots/user_research_experience_panels.png"), width=7, height=9, uni
 
 ```
 
-## Figure 4: User Preferences
+## Figure 3: User Preferences
 
 ```{r, fig.width = 8, fig.height = 10}
 (gdumbbell + ggtitle("")) /
@@ -92,7 +92,7 @@ ggsave(here("plots/user_preferences_panels.png"), width=8, height=10, units="in"
 ggsave(here("plots/user_tech_comfort_panels.png"), width=8, height=10, units="in")
 ```
 
-## Figure 6: Support Awareness
+## Figure 4: Support Awareness
 
 ```{r, fig.width = 10, fig.height = 8}
 ((demoPlotRaw + ggtitle("") + xlab("")) + (demoPlot + ggtitle("") + ylab("") + xlab(""))) /

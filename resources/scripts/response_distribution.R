@@ -44,6 +44,8 @@ socialMedia <-data.frame(
   media = c("AnVIL-mailing-list", "X", "FH-Data Slack" , "X", "X", "X", "AnVIL-mailing-list", "X"),
   date = ymd(c("2024-02-15", "2024-02-15", "2024-02-16", "2024-02-26", "2024-03-05", "2024-03-11", "2024-03-13", "2024-03-14")))
 
+length(unique(socialMedia$date)) #7 unique days of advertisement
+
 allDatesDf <- data.frame(date = ymd(seq.Date(as.Date(poll_opening_day), as.Date(poll_closing_day), by = "days")), count = 0)
 
 responseDf <- resultsTidy %>% 
@@ -53,8 +55,7 @@ responseDf <- resultsTidy %>%
   summarize(count = n())
 
 toPlot <- right_join(responseDf, allDatesDf, by="date") %>%
-  mutate(count = coalesce(count.x, count.y), #this is setting days without a timestamp to 0 and adding a 0 to days with responses
-         groupVal = "responses") %>% 
+  mutate(count = coalesce(count.x, count.y)) %>% #this is setting days without a timestamp to 0 and adding a 0 to days with responses
   select(!c(count.x, count.y)) 
 
 #Raw Daily Response Count
@@ -117,4 +118,26 @@ p5 <- toPlot %>%
 
 p5 <- plot_aesthetics(p5, ylabel = "Degree Type Responses", legend = TRUE, bar = TRUE)
   
+## Stats
 
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+responses_only <- toPlot %>%
+  ungroup() %>%
+  select(date, count) %>%
+  group_by(date) %>%
+  summarize(daily_count = sum(count))
+
+responses_only_nz <- responses_only %>%
+  filter(daily_count >=1) #filter out days with a response count of 0
+
+Mode(responses_only$daily_count) #0
+sum(responses_only$daily_count == 0) #21 days with 0 responses
+
+Mode(responses_only_nz$daily_count) #1
+sum(responses_only$daily_count == 1) #8 days with 1 response
+
+mean(responses_only$daily_count) #1.25

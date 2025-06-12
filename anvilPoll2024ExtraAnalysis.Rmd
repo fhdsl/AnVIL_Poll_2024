@@ -62,7 +62,50 @@ ggsave(here("plots/degree_usertype.png")) #set plot size
 
 ## Demographics: Kind of Work (supplemental)
 
-*No supplements at this time*
+```{r}
+dfForPlotKOWSupp <- resultsTidy %>%
+  separate_longer_delim(KindOfWork,
+                        delim=", ") %>%
+  mutate(KindOfWork = recode(KindOfWork,
+                             "computational education" = "Computational education",
+                             "Program administration," = "Program administration"),
+         KindOfWork = factor(KindOfWork))
+
+factorLevel <-  as.data.frame(table(dfForPlotKOWSupp$KindOfWork)) %>%
+  arrange(-Freq) %>%
+  select(Var1) %>%
+  unlist() %>%
+  unname() %>%
+  rev()
+
+pct_format = scales::percent_format(accuracy = .1)
+
+kowPlotSupp <- ggplot(dfForPlotKOWSupp,
+                      aes(y = factor(KindOfWork, levels = factorLevel),
+                          fill = "#25445A")) +
+  geom_bar(stat="count") +
+  theme_bw() +
+  theme(legend.position = "None") +
+  ylab("") +
+  ggtitle("What kind of work do you do?") +
+  xlab("Count") +
+  xlim(0, nrow(resultsTidy)) +
+  scale_fill_manual(values = "#25445A") +
+  geom_text(
+    aes(label = sprintf('%d (%s)',
+                        after_stat(count),
+                        pct_format(after_stat(count) / nrow(resultsTidy))
+                        )
+        ),
+    stat = 'count',
+    nudge_x = 5,
+    colour = '#25445A')
+
+kowPlotSupp
+
+ggsave(here("plots/2024/kindOfWorkBar.png"), width = 6.25, height = 3.86, units = "in")
+
+```
 
 
 ## Demographics: Institutional Affiliation (supplemental)

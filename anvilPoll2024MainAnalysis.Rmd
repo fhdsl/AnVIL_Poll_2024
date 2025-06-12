@@ -55,12 +55,12 @@ typeOfUserPlot <- resultsTidy %>%
     CurrentUsageDescription == "I have never used the AnVIL, but have heard of it" ~ "I have never\nused the AnVIL",
     CurrentUsageDescription == "I have never heard of the AnVIL" ~ "I have never\nheard of the AnVIL"
   )) %>%
-  ggplot(aes(#x = count, 
-             y = fct_rev(fct_infreq(CurrentUsageDescription)), 
+  ggplot(aes(#x = count,
+             y = fct_rev(fct_infreq(CurrentUsageDescription)),
              fill = UserType)) +
   geom_bar() + #stat="identity", position ="stack") +
   ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
-  geom_text(aes(label = after_stat(..count..)), stat = "count", 
+  geom_text(aes(label = after_stat(..count..)), stat = "count",
             position = "stack", hjust = -1, size=2
            ) +
       coord_cartesian(clip = "off")
@@ -105,7 +105,7 @@ degreePlot <- resultsTidy %>%
              )) +
       geom_bar() + #position = "stack", stat="identity") +
       geom_text(
-        aes(label = after_stat(..count..)), stat = "count", 
+        aes(label = after_stat(..count..)), stat = "count",
         position = "stack", hjust = -1, size=2
       ) + coord_cartesian(clip = "off") +
       ggtitle("What is the highest degree you have attained?")
@@ -145,11 +145,11 @@ dfForPlotKOW <- resultsTidy %>%
          Timestamp = factor(Timestamp)
          )
 
-factorLevel <-  as.data.frame(table(dfForPlotKOW$KindOfWork)) %>% 
-  arrange(-Freq) %>% 
-  select(Var1) %>% 
-  unlist() %>% 
-  unname() %>% 
+factorLevel <-  as.data.frame(table(dfForPlotKOW$KindOfWork)) %>%
+  arrange(-Freq) %>%
+  select(Var1) %>%
+  unlist() %>%
+  unname() %>%
   rev()
 
 kowPlot <- ggplot(dfForPlotKOW,
@@ -194,7 +194,7 @@ instTypePlot <- resultsTidy %>%
     fill = UserType
   )) + geom_bar() + #position = "stack", stat = "identity") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
   ) + coord_cartesian(clip = "off") +
   ggtitle("Institutional Affiliation for All Survey Respondents") +
@@ -310,7 +310,7 @@ toPlotToolKnowledgeSeparateBR <- rows_append(toPlotToolKnowledge, data.frame(
           AnVILorNo = rep(roi$AnVILorNo,2),
           Tool = c("Bioconductor", "RStudio")
   )) %>%
-  rows_delete(., data.frame(roi))
+  filter(Tool != "Bioconductor & RStudio")
 ```
 
 
@@ -467,7 +467,7 @@ We adjust various aspects of the theme like turning off the grid and background 
 
 ```{r}
 genomicsExpPlot <- ggplot(experienceDf, aes(x=experienceLevel,
-                                            #y=n, 
+                                            #y=n,
                                             fill = experienceLevel)) +
   facet_grid(~researchType) +
   geom_bar() + #stat="identity") +
@@ -488,15 +488,15 @@ ggsave(here("plots/researchExperienceLevel_sequentialColor_noUserTypeSplit.png")
 
 
 ```{r, fig.height = 4, fig.width = 9}
-experienceDf_pct <- 
-  experienceDf %>% 
-  group_by(researchType, experienceLevel, UserType) %>% 
+experienceDf_pct <-
+  experienceDf %>%
+  group_by(researchType, experienceLevel, UserType) %>%
   summarize(n = n()) %>%
-  group_by(UserType, researchType) %>% 
+  group_by(UserType, researchType) %>%
   mutate(GroupTotal = sum(n),
          Pct = n / GroupTotal * 100)
 
-genomicsExpPlot_replot <- 
+genomicsExpPlot_replot <-
   ggplot(experienceDf_pct, aes(x=Pct, y=UserType, fill=experienceLevel)) +
   facet_wrap(~researchType, ncol=1) +
   geom_bar(stat = "identity", position = "stack")
@@ -720,7 +720,7 @@ demoPlotRaw <- resultsTidy %>%
   geom_bar() + #stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
     #aes(label = after_stat(x), group = AnVILDemo),
     #stat = 'summary', fun = sum, hjust = -1, size=2
@@ -743,7 +743,7 @@ demoPlot <- resultsTidy %>%
   geom_bar() + #stat = "identity") +
   ggtitle("Have you attended a monthly AnVIL Demo?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
     #aes(label = after_stat(x), group = AnVILDemoAwareness),
     #stat = 'summary', fun = sum, hjust = -1, size=2
@@ -789,7 +789,7 @@ forumPlotRaw <- ggplot(forumdf,
   geom_bar() + #stat = "identity") +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
     #aes(label = after_stat(x), group = AnVILSupportForum),
     #stat = 'summary', fun = sum, hjust = -1, size=2
@@ -807,8 +807,8 @@ forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
   geom_bar() +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
-    position = "stack", hjust = -1, size=2) + 
+    aes(label = after_stat(..count..)), stat = "count",
+    position = "stack", hjust = -1, size=2) +
   coord_cartesian(clip = "off")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness", labelBars = FALSE)
@@ -1030,7 +1030,7 @@ whereRunPlot <- resultsTidy %>%
   geom_bar() + #stat="identity") +
   ggtitle("Where do you currently run analyses?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
   ) + coord_cartesian(clip = "off")
 
@@ -1044,20 +1044,20 @@ whereRunPlot
 
 ```{r}
 nonOtherResponses <- read_delim(here("data/codebook.txt"), #read in the codebook
-                                delim = "\t", 
-                                col_select = c(SimplifiedColNames, Description)) %>% 
+                                delim = "\t",
+                                col_select = c(SimplifiedColNames, Description)) %>%
   filter(SimplifiedColNames == "RepositoriesDMS") %>% #select just the row of information for the column of interest
   separate_longer_delim(Description, delim =", ") %>%  #separate the choices from each other
   separate_longer_delim(Description, delim="include ") %>% #separate the choices from the rest of the description
   filter(!str_detect(Description, "This question|Other|Possible answers")) %>% #keep only the known responses
-  select(Description) %>% 
+  select(Description) %>%
   data.frame() %>%
   mutate(suffix = "")
 
 dmsPlot <- resultsTidy %>%
   separate_longer_delim(RepositoriesDMS, delim=", ") %>%
   separate_longer_delim(RepositoriesDMS, delim=" & ") %>%
-  mutate(RepositoriesDMS = 
+  mutate(RepositoriesDMS =
            case_when(
              str_detect(RepositoriesDMS, regex("dbgap", ignore_case = TRUE)) ~ "dbGaP",
              .default = as.character(RepositoriesDMS)
@@ -1069,14 +1069,14 @@ dmsPlot <- resultsTidy %>%
   unite(RepositoriesMut, c("RepositoriesDMS", "suffix"), sep="") %>% #unite the responses with the suffix, appending the asterisk for user supplied answers
   #group_by(UserType, RepositoriesMut) %>%
   #summarize(count = n()) %>%
-  ggplot(aes(#x = count, 
+  ggplot(aes(#x = count,
              y = fct_rev(fct_infreq(RepositoriesMut)), #reorder(RepositoriesMut, count),
              fill = UserType)) +
   geom_bar() + #stat = "identity") +
   labs(caption = '* denotes a user provided "Other" response') + #Add a caption about * meaning an "Other" response that was user provided
   ggtitle("What repositories are you considering\nto share data (for example, to comply\nwith the NIH DMS Policy)?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
   ) + coord_cartesian(clip = "off")
 
@@ -1137,7 +1137,7 @@ fundingSourcePlot <- toPlotFundingSource %>%
   geom_bar() + #position = "stack", stat = "identity") +
   ggtitle("What source(s) of funds do you use to pay for cloud computing?") +
   geom_text(
-    aes(label = after_stat(..count..)), stat = "count", 
+    aes(label = after_stat(..count..)), stat = "count",
     position = "stack", hjust = -1, size=2
   ) + coord_cartesian(clip = "off")
 

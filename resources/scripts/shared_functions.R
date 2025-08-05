@@ -23,12 +23,12 @@ stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequen
     if (hjustv == 0 | tolower(ylabel) == "count"){
       gplot <- gplot +
         geom_text(aes(label = after_stat(..count..)), stat = "count", 
-                  position = positionarg, vjust = -1, size=2) +
+                  position = positionarg, vjust = -1, size=4) +
         coord_cartesian(clip = "off")
     } else{
       gplot <- gplot +
         geom_text(aes(label = paste0("    ", after_stat(..count..))), stat = "count", 
-                  position = positionarg, hjust = -1, size=2, group = groupVar, inherit.aes = TRUE) +
+                  position = positionarg, hjust = -1, size=4, group = groupVar, inherit.aes = TRUE) +
         coord_cartesian(clip = "off")
     }
   }
@@ -40,7 +40,7 @@ stylize_bar <- function(gplot, usertypeColor = TRUE, singleColor = FALSE, sequen
     theme(legend.title = element_blank(), 
           legend.position = legendpos, 
           axis.text.x = element_text(angle=rotate, hjust=hjustv),
-          text = element_text(size=12)) +
+          text = element_text(size=16)) +
     scale_fill_manual(values = fillColors, na.translate = F)
   )
 }
@@ -60,15 +60,15 @@ stylize_dumbbell <- function(gplot, xmax = NULL, importance = FALSE, preference 
       theme(panel.background = element_blank(),
             legend.position = "bottom",
             legend.title = element_blank(),
-            text = element_text(size=12)) +
+            text = element_text(size=16)) +
       xlab(xlabel) +
       ylab(ylabel) +
       scale_color_manual(values = c("#E0DD10", "#035C94")) +
       coord_cartesian(clip = "off") +
       theme(plot.margin = margin(1,1,1,1.1, "cm")) +
       scale_x_reverse(limits = c(xmax,1), breaks = xmax:1, labels = xmax:1) +
-      annotation_custom(textGrob(textGrobMost, gp=gpar(fontsize=8, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
-      annotation_custom(textGrob(textGrobLeast, gp=gpar(fontsize=8, fontface= "bold")),xmin=-xmax,xmax=-xmax,ymin=-0.5,ymax=-0.5)
+      annotation_custom(textGrob(textGrobMost, gp=gpar(fontsize=9, fontface = "bold")),xmin=-1,xmax=-1,ymin=-0.5,ymax=-0.5) +
+      annotation_custom(textGrob(textGrobLeast, gp=gpar(fontsize=9, fontface= "bold")),xmin=-xmax,xmax=-xmax,ymin=-0.5,ymax=-0.5)
   )
 }
 
@@ -81,9 +81,9 @@ PlotToolKnowledge_customization <- function(gplot){
       theme_bw() +
       theme(panel.background = element_blank(),
             panel.grid.minor.x = element_blank(),
-            text = element_text(size=12)) +
-      annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=8, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
-      annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=8, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
+            text = element_text(size=16)) +
+      annotation_custom(textGrob("Don't know\nat all", gp=gpar(fontsize=9, fontface = "bold")),xmin=0,xmax=0,ymin=-2,ymax=-2) +
+      annotation_custom(textGrob("Extremely\ncomfortable", gp=gpar(fontsize=9, fontface= "bold")),xmin=5,xmax=5,ymin=-2,ymax=-2) +
       coord_cartesian(clip = "off") +
       theme(plot.margin = margin(1,1,1,1.1, "cm")) +
       ggtitle("How would you rate your knowledge of or\ncomfort with these technologies or data features?") +
@@ -138,7 +138,7 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
           axis.text.x = element_text(angle=45, hjust=1),
           legend.position = "inside",
           legend.position.inside = c(0.8, 0.8),
-          text = element_text(size=12)
+          text = element_text(size=16)
           ) +
     xlab("Controlled access datasets") +
     ylab("Count") +
@@ -148,7 +148,7 @@ plot_which_data <- function(inputToPlotDF, subtitle = NULL){
               stat = 'count', #'summary',
               #fun = sum,
               vjust = -1,
-              size=2) +
+              size=4) +
     coord_cartesian(clip = "off") +
     scale_fill_manual(values = c("#25445A", "#7EBAC0", "grey"))
 

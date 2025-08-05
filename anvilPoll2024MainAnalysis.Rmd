@@ -61,7 +61,7 @@ typeOfUserPlot <- resultsTidy %>%
   geom_bar() + #stat="identity", position ="stack") +
   ggtitle("How would you describe your current usage\nof the AnVIL platform?") +
   geom_text(aes(label = after_stat(..count..)), stat = "count",
-            position = "stack", hjust = -1, size=2
+            position = "stack", hjust = -1, size=4
            ) +
       coord_cartesian(clip = "off")
     #aes(label = count, group = CurrentUsageDescription),
@@ -106,7 +106,7 @@ degreePlot <- resultsTidy %>%
       geom_bar() + #position = "stack", stat="identity") +
       geom_text(
         aes(label = after_stat(..count..)), stat = "count",
-        position = "stack", hjust = -1, size=2
+        position = "stack", hjust = -1, size=4
       ) + coord_cartesian(clip = "off") +
       ggtitle("What is the highest degree you have attained?")
 
@@ -195,12 +195,12 @@ instTypePlot <- resultsTidy %>%
   )) + geom_bar() + #position = "stack", stat = "identity") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
   ) + coord_cartesian(clip = "off") +
   ggtitle("Institutional Affiliation for All Survey Respondents") +
-  annotation_custom(textGrob("- R1 University     \n- Med Campus      \n- Research Center\n- NIH                     ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = 2.65, ymax = 2.65) +
-  annotation_custom(textGrob("- Industry             \n- International Loc\n- Unknown           ", gp = gpar(fontsize = 8)), xmin = -8.5, xmax = -8.5, ymin = .7, ymax = .7) +
-  annotation_custom(textGrob("- R2 University         \n- Community College", gp=gpar(fontsize=8)),xmin=-8.5,xmax=-8.5,ymin=1.75,ymax=1.75) +
+  annotation_custom(textGrob("- R1 University     \n- Med Campus      \n- Research Center\n- NIH                     ", gp = gpar(fontsize = 9.5)), xmin = -8.5, xmax = -8.5, ymin = 2.65, ymax = 2.65) +
+  annotation_custom(textGrob("- Industry             \n- International Loc\n- Unknown           ", gp = gpar(fontsize = 9.5)), xmin = -8.5, xmax = -8.5, ymin = .7, ymax = .7) +
+  annotation_custom(textGrob("- R2 University         \n- Community College", gp=gpar(fontsize=9.5)),xmin=-8.5,xmax=-8.5,ymin=1.75,ymax=1.75) +
   ggtitle("What institution are you affiliated with?")
 
 instTypePlot %<>% stylize_bar(labelBars = FALSE)
@@ -323,7 +323,7 @@ Used [this Stack Overflow response](https://stackoverflow.com/a/72309061) to get
 ```{r}
 PlotToolKnowledge_avg_score <-
   ggplot(toPlotToolKnowledgeSeparateBR, aes(y = reorder(Tool, avgScore), x = avgScore)) +
-  geom_point(aes(color = UserType, shape = AnVILorNo))
+  geom_point(aes(color = UserType, shape = AnVILorNo), size = 3.5)
 
 
 PlotToolKnowledge_avg_score %<>% PlotToolKnowledge_customization()
@@ -721,7 +721,7 @@ demoPlotRaw <- resultsTidy %>%
   ggtitle("Have you attended a monthly AnVIL Demo?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
     #aes(label = after_stat(x), group = AnVILDemo),
     #stat = 'summary', fun = sum, hjust = -1, size=2
 ) + coord_cartesian(clip = "off")
@@ -744,7 +744,7 @@ demoPlot <- resultsTidy %>%
   ggtitle("Have you attended a monthly AnVIL Demo?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
     #aes(label = after_stat(x), group = AnVILDemoAwareness),
     #stat = 'summary', fun = sum, hjust = -1, size=2
   ) + coord_cartesian(clip = "off")
@@ -790,7 +790,7 @@ forumPlotRaw <- ggplot(forumdf,
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
     #aes(label = after_stat(x), group = AnVILSupportForum),
     #stat = 'summary', fun = sum, hjust = -1, size=2
 ) + coord_cartesian(clip = "off")
@@ -808,7 +808,7 @@ forumPlot <- ggplot(resultsTidy, aes(y = forumAwareness, fill = UserType)) +
   ggtitle("Have you ever read or posted in our AnVIL Support Forum?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2) +
+    position = "stack", hjust = -1, size=4) +
   coord_cartesian(clip = "off")
 
 forumPlot %<>% stylize_bar(ylabel = "Awareness", labelBars = FALSE)
@@ -916,7 +916,7 @@ gdumbbell <- ggplot(totalRanksdf,
                     aes(x = avgRank,
                         y = reorder(Feature, -avgRank))) +
   geom_line() +
-  geom_point(aes(color = Usertype), size = 3) +
+  geom_point(aes(color = Usertype), size = 3.5) +
   ggtitle("Rank the following features according to\ntheir importance to you as a potential user\nor for your continued use of the AnVIL.")
 
 
@@ -988,7 +988,7 @@ toPlotTrainingRanks <- bind_rows(
 ```{r, fig.height = 5, fig.width = 6}
 tdumbbell <- ggplot(toPlotTrainingRanks, aes(x = avgRank, y = reorder(TrainingType, -avgRank))) +
   geom_line() +
-  geom_point(aes(color = UserType), size = 3) +
+  geom_point(aes(color = UserType), size = 3.5) +
   ggtitle("Please rank how/where you would prefer\nto attend AnVIL training workshops.")
 
 
@@ -1031,7 +1031,7 @@ whereRunPlot <- resultsTidy %>%
   ggtitle("Where do you currently run analyses?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
   ) + coord_cartesian(clip = "off")
 
 whereRunPlot %<>% stylize_bar(ylabel = "Platform", labelBars = FALSE)
@@ -1077,7 +1077,7 @@ dmsPlot <- resultsTidy %>%
   ggtitle("What repositories are you considering\nto share data (for example, to comply\nwith the NIH DMS Policy)?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
   ) + coord_cartesian(clip = "off")
 
 dmsPlot %<>% stylize_bar(ylabel = "Data Repository", labelBars = FALSE)
@@ -1138,7 +1138,7 @@ fundingSourcePlot <- toPlotFundingSource %>%
   ggtitle("What source(s) of funds do you use to pay for cloud computing?") +
   geom_text(
     aes(label = after_stat(..count..)), stat = "count",
-    position = "stack", hjust = -1, size=2
+    position = "stack", hjust = -1, size=4
   ) + coord_cartesian(clip = "off")
 
 fundingSourcePlot %<>% stylize_bar(ylabel="Funding Source", labelBars = FALSE)
@@ -1189,7 +1189,7 @@ compNeedsPlot <- resultsTidy %>%
              fill = "#25445A")) +
   geom_bar() + #stat = "identity") +
   geom_text(aes(label = after_stat(..count..)), stat = "count",
-                 position = "stack", hjust = -1, size=2) +
+                 position = "stack", hjust = -1, size=4) +
   coord_cartesian(clip = "off") +
   ggtitle("What computational and storage resources do you foresee\nneeding in the next 12 months?")
 

@@ -33,5 +33,5 @@ output:
     highlight: textmate
     css: styles.css
     includes:
-       in_header: resources/header.html
+       in_header: [resources/header.html, GA_Script.html]
        after_body: resources/footer.html

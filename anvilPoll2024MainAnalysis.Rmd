@@ -11,6 +11,11 @@ library(here)
 library(grid) #for Grobs
 library(scales)
 library(forcats)
+if (!require("ggcheck")) install.packages("ggcheck", repos = "http://cran.us.r-project.org")
+library(ggcheck)
+library(patchwork)
+if (!require("aplot")) install.packages("aplot", repos = "http://cran.us.r-project.org")
+library(aplot)
 if (!require("ggVennDiagram")) install.packages("ggVennDiagram", repos = "http://cran.us.r-project.org")
 library(ggVennDiagram)
 
